@@ -152,7 +152,6 @@ func (a *App) Replace(input string, output string, args []map[string]string, fil
 	if len(fileName) != 0 && len(fileName) != 2 {
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": "文件名替换成对出现"}
 	}
-
 	replaceFileName := false
 
 	if len(fileName) == 2 {
