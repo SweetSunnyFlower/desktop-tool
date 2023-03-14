@@ -2,4 +2,4 @@
 ### 构建
 `wails build`
 
-![avatar]("./replace.png")
+![avatar](./replace.png)
