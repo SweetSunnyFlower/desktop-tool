@@ -5,4 +5,8 @@ export function GetDirs(arg1:string):Promise<{[key: string]: any}>;
 
 export function Greet(arg1:string,arg2:string):Promise<string>;
 
+export function ParsePromptFile(arg1:string):Promise<{[key: string]: any}>;
+
 export function Replace(arg1:string,arg2:string,arg3:Array<{[key: string]: string}>,arg4:Array<string>):Promise<{[key: string]: any}>;
+
+export function UploadImage(arg1:string):Promise<{[key: string]: any}>;

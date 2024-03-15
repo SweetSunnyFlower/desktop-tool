@@ -7,7 +7,7 @@
     <div class="main">
         <div class="container b-container" id="b-container">
             <form class="form" id="b-form" method="" action="">
-            <h2 class="form_title title">登录工具</h2>
+            <h2 class="form_title title">ImageToText</h2>
             <input class="form__input" type="text" placeholder="用户名">
             <input class="form__input" type="password" placeholder="密码">
             <router-link :to="{ name: 'welcome'}">

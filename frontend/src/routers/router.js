@@ -1,6 +1,6 @@
 import Header from '../layouts/Header.vue';
 import Welcome from '../pages/Welcome.vue';
-import Replace from '../pages/Replace.vue';
+import ImageToText from '../pages/ImageToText.vue';
 import Login from '../pages/Login.vue';
 
 const routes = [
@@ -19,9 +19,9 @@ const routes = [
                 component: Welcome,
             },
             {
-                path: "replace",
-                name: "replace",
-                component: Replace
+                path: "image-to-text",
+                name: "image-to-text",
+                component: ImageToText
             }
         ]
     },

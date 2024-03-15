@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/StackExchange/wmi"
+	// "github.com/StackExchange/wmi"
 	"github.com/nguyenthenguyen/docx"
 	// "github.com/StackExchange/wmi"
 )
@@ -111,10 +111,10 @@ func getDirAndFileByPath(path string) ([]map[string]interface{}, error) {
 func getStorageInfo() []Storage {
 	var storageinfo []storageInfo
 	var loaclStorages []Storage
-	err := wmi.Query("Select * from Win32_LogicalDisk", &storageinfo)
-	if err != nil {
-		panic(err)
-	}
+	// err := wmi.Query("Select * from Win32_LogicalDisk", &storageinfo)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	for _, storage := range storageinfo {
 		info := Storage{
@@ -146,6 +146,62 @@ func IsDir(path string) bool {
 }
 
 var response string = ""
+
+type BosImage struct {
+	ID  int    `json:"id"`
+	URL string `json:"url"`
+}
+
+type Prompt struct {
+	ID      int    `json:"id"`
+	Prompt  string `json:"prompt"`
+	History string `json:"history"`
+}
+
+// 解析Prompt文件
+func (a *App) ParsePromptFile(file_path string) map[string]interface{} {
+
+	// mock upload image
+	prompts := []Prompt{
+		{
+			ID:     1,
+			Prompt: "a little boy",
+		},
+		{
+			ID:     2,
+			Prompt: "a little girl",
+		},
+	}
+
+	return map[string]interface{}{"code": 0, "data": prompts, "message": response}
+}
+
+func (a *App) UploadImage(input string) map[string]interface{} {
+	imagePath := input
+
+	// 判断是否为文件夹
+	if !IsDir(imagePath) {
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": "文件名替换成对出现"}
+	}
+
+	if response == "" {
+		response = "上传成功"
+	}
+
+	// mock upload image
+	bosImages := []BosImage{
+		{
+			ID:  1,
+			URL: "https://www.baidu.com/img/bd_logo1.png",
+		},
+		{
+			ID:  2,
+			URL: "https://www.baidu.com/img/bd_logo1.png",
+		},
+	}
+
+	return map[string]interface{}{"code": 0, "data": bosImages, "message": response}
+}
 
 func (a *App) Replace(input string, output string, args []map[string]string, fileName []string) map[string]interface{} {
 

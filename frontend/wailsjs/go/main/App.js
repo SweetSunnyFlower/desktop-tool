@@ -10,6 +10,14 @@ export function Greet(arg1, arg2) {
   return window['go']['main']['App']['Greet'](arg1, arg2);
 }
 
+export function ParsePromptFile(arg1) {
+  return window['go']['main']['App']['ParsePromptFile'](arg1);
+}
+
 export function Replace(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['Replace'](arg1, arg2, arg3, arg4);
+}
+
+export function UploadImage(arg1) {
+  return window['go']['main']['App']['UploadImage'](arg1);
 }
