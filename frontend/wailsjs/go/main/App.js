@@ -14,6 +14,10 @@ export function ParsePromptFile(arg1) {
   return window['go']['main']['App']['ParsePromptFile'](arg1);
 }
 
+export function ParseVisFile(arg1) {
+  return window['go']['main']['App']['ParseVisFile'](arg1);
+}
+
 export function Replace(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['Replace'](arg1, arg2, arg3, arg4);
 }

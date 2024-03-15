@@ -238,14 +238,4 @@ const handling = ref(false)
 
 </template>
 <style scoped>
-/* #form {
-    margin: 20px;
-} */
-
-/* 
-.part {
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 20px;
-} */
 </style>
