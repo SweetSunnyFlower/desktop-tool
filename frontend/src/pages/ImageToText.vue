@@ -96,13 +96,14 @@ const parsePromptFile = () => {
             pre_data.value.forEach(item => {
                 let prompt = res.data.find(prompt => prompt.id == item.id)
 
-                console.log("aaaaa",prompt);
+                console.log("aaaaa", prompt);
 
                 item["prompt"] = prompt.prompt
+                item["history"] = prompt.history
             })
-            console.log(pre_data.value)
             message.info(res.message)
-            pre_data.value = res.data
+            showModal.value = false
+            // pre_data.value = res.data
         } else {
             message.error(res.message)
         }
@@ -156,34 +157,31 @@ const showModal = ref(false)
 <template>
     <n-modal v-model:show="showModal" preset="dialog" title="Dialog">
         <template #header>
-            <div>标题</div>
+            <div>请选择关联的Prompt</div>
         </template>
         <div>
-            <select-path :placeholder="placeholderInput" @click-path="selectPromptFile" />
+            <select-path :placeholder="placeholderInput" type="file" @click-path="selectPromptFile" />
         </div>
         <template #action>
             <n-button strong success round @click="parsePromptFile">解析</n-button>
         </template>
     </n-modal>
     <div id="form">
-        <n-grid x-gap="12" :cols="2">
-            <n-gi>
-                <select-path :placeholder="placeholderInput" @click-path="selectInput" />
-            </n-gi>
-            <n-gi>
-                <select-path :placeholder="placeholderOutput" @click-path="selectOutput" />
-            </n-gi>
-        </n-grid>
-        <n-grid x-gap="12" :cols="2">
-            <n-gi>
-                <div @click="uploadImage" class="add-item">上传Bos</div>
-            </n-gi>
-            <n-gi>
-                <div @click="showModal = true" class="add-item">上传关联prompt</div>
-            </n-gi>
-        </n-grid>
-        <n-data-table :columns="columns" :data="pre_data" />
-        <div @click="vis" class="add-item">vis图生文</div>
+        <div class="part">
+            <select-path :placeholder="placeholderInput" type="dir" @click-path="selectInput" />
+            <n-button style="margin-top: 20px;" strong type="success" round @click="uploadImage" class="add-item">上传到Bos</n-button>
+        </div>
+
+        <div class="part">
+            <n-data-table :columns="columns" :data="pre_data" />
+            <n-button style="margin-top: 20px;" strong type="success" round @click="showModal = true" class="add-item">上传关联prompt</n-button>
+        </div>
+
+        <div class="part">
+            <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutput" />
+            <n-button style="margin-top: 20px;" strong type="success" round @click="vis" class="add-item">输出结果</n-button>
+        </div>
+
     </div>
 </template>
 <style scoped>
@@ -191,20 +189,10 @@ const showModal = ref(false)
     margin: 20px;
 }
 
-.add-item {
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid black;
-    border-radius: 4px;
-    margin: 10px 0;
-    cursor: pointer;
-    transition: all 0.5 ease-in;
-}
-
-.add-item:hover {
-    border: 1px solid #ccc;
-    color: #ccc;
+.part {
+    background-color: #f5f5f5;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 </style>

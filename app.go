@@ -173,15 +173,19 @@ func (a *App) ParsePromptFile(file_path string) map[string]interface{} {
 		},
 	}
 
-	return map[string]interface{}{"code": 0, "data": prompts, "message": response}
+	return map[string]interface{}{"code": 0, "data": prompts, "message": "解析成功"}
 }
 
 func (a *App) UploadImage(input string) map[string]interface{} {
 	imagePath := input
 
+	if imagePath == "" {
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": "请选择文件夹"}
+	}
+
 	// 判断是否为文件夹
 	if !IsDir(imagePath) {
-		return map[string]interface{}{"code": 1, "data": []string{}, "message": "文件名替换成对出现"}
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": "请选择文件夹"}
 	}
 
 	if response == "" {

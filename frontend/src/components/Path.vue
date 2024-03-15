@@ -5,7 +5,8 @@ import { GetDirs } from '../../wailsjs/go/main/App';
 import { Folder, FolderOpenOutline, FileTrayFullOutline , CloseOutline} from "@vicons/ionicons5";
 
 const props = defineProps({
-    placeholder: String
+    placeholder: String,
+    type: String,
 })
 
 const emits = defineEmits(["clickPath"]);
@@ -26,7 +27,7 @@ onMounted(async () => {
                         default: () => h(path.name ? Folder : FileTrayFullOutline)
                     }),
                     isDir: path.isDir,
-                    disabled: !path.isDir,
+                    disabled: props.type == "dir" && !path.isDir,
                     isLeaf: !path.hasChildren
                 })
             })
@@ -56,7 +57,7 @@ const handleLoad = async (node) => {
                     default: () => h(path.isDir ? Folder : FileTrayFullOutline)
                 }),
                 isDir: path.isDir,
-                disabled: !path.isDir,
+                disabled: props.type == "dir" && !path.isDir,
                 isLeaf: !path.hasChildren
             })
         })
