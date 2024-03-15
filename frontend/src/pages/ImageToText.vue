@@ -2,8 +2,7 @@
 import SelectPath from "../components/Path.vue";
 import { h, ref, onMounted, reactive } from "vue";
 import { Replace, UploadImage, ParsePromptFile } from '../../wailsjs/go/main/App'
-import { useMessage } from "naive-ui";
-import { NInput, NImage } from "naive-ui";
+import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
 
 const data = reactive(
     {
@@ -69,6 +68,7 @@ const pre_data = ref([
 ])
 
 const message = useMessage();
+const notification = useNotification()
 
 const placeholderInput = ref("输入")
 
@@ -116,6 +116,53 @@ const selectOutput = (path) => {
 }
 
 const vis = () => {
+    handling.value = true
+    let percent = 0
+    let markAsRead = false
+    const n = notification.create({
+        title: '重要通知',
+        content: `请不要操作当前界面`,
+        meta: new Date().toLocaleString(),
+        action: () =>
+            h(
+                NButton,
+                {
+                    text: true,
+                    type: 'primary',
+                    onClick: () => {
+                        markAsRead = true
+                        n.destroy()
+                    }
+                },
+                {
+                    default: () => '已读'
+                }
+            ),
+        onClose: () => {
+            if (!markAsRead) {
+                message.warning('请设为已读')
+                return false
+            }
+        }
+    })
+    outputText.value = "输出结果" + `${percent}%`
+    let interval = setInterval(() => {
+        if (percent >= 100) {
+            handling.value = false
+            clearInterval(interval)
+            const n = notification.create({
+                title: '导出通知',
+                content: `请查看输出目录`,
+                meta: new Date().toLocaleString(),
+                onClose: () => {
+
+                }
+            })
+            return
+        }
+        percent = percent + 10
+        outputText.value = "输出结果" + `${percent}%`
+    }, 30)
     console.log(pre_data.value)
 }
 
@@ -152,10 +199,13 @@ const handleInputInput = () => {
 
 const showModal = ref(false)
 
+const outputText = ref("输出结果")
+const handling = ref(false)
+
 </script>
 
 <template>
-    <n-modal v-model:show="showModal" preset="dialog" title="Dialog">
+    <n-modal v-model:show="showModal" preset="card" :style="{ width: '600px' }" title="prompt">
         <template #header>
             <div>请选择关联的Prompt</div>
         </template>
@@ -163,36 +213,39 @@ const showModal = ref(false)
             <select-path :placeholder="placeholderInput" type="file" @click-path="selectPromptFile" />
         </div>
         <template #action>
-            <n-button strong success round @click="parsePromptFile">解析</n-button>
+            <div class="flex flex-row justify-end">
+                <n-button strong dashed round @click="parsePromptFile">解析</n-button>
+            </div>
         </template>
     </n-modal>
-    <div id="form">
-        <div class="part">
-            <select-path :placeholder="placeholderInput" type="dir" @click-path="selectInput" />
-            <n-button style="margin-top: 20px;" strong type="success" round @click="uploadImage" class="add-item">上传到Bos</n-button>
-        </div>
+    <n-spin :show="handling">
+        <div class="m-4 text-black">
+            <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
+                <select-path :placeholder="placeholderInput" type="dir" @click-path="selectInput" />
+                <n-button strong dashed round @click="uploadImage">上传到Bos(文件名为ID)</n-button>
+            </div>
 
-        <div class="part">
-            <n-data-table :columns="columns" :data="pre_data" />
-            <n-button style="margin-top: 20px;" strong type="success" round @click="showModal = true" class="add-item">上传关联prompt</n-button>
+            <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
+                <n-data-table :columns="columns" :data="pre_data" />
+                <n-button strong dashed round @click="showModal = true">上传关联prompt</n-button>
+            </div>
+            <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
+                <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutput" />
+                <n-button strong dashed round @click="vis">{{ outputText }}</n-button>
+            </div>
         </div>
+    </n-spin>
 
-        <div class="part">
-            <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutput" />
-            <n-button style="margin-top: 20px;" strong type="success" round @click="vis" class="add-item">输出结果</n-button>
-        </div>
-
-    </div>
 </template>
 <style scoped>
-#form {
+/* #form {
     margin: 20px;
-}
+} */
 
+/* 
 .part {
-    background-color: #f5f5f5;
     border-radius: 20px;
     padding: 20px;
     margin-bottom: 20px;
-}
+} */
 </style>

@@ -5,6 +5,8 @@ import App from './App.vue';
 import 'vfonts/Lato.css';
 // 等宽字体
 import 'vfonts/FiraCode.css';
+// 导入css样式
+import "./assets/css/style.css"
 
 import routes from './routers/router'
 
