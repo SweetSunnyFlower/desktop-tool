@@ -8,38 +8,34 @@ import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "nai
 
 const message = useMessage();
 const notification = useNotification()
-
 const handling = ref(false);
 
-const file_path = ref('');
+const filePath = ref('');
 
 const selectInput = (path) => {
-    file_path.value = path
-    console.log(file_path.value)
+    filePath.value = path
+    console.log(filePath.value)
 }
 
-const placeholderInput = ref("输入")
+const placeholderInput = ref("请选择文件")
 
-const pre_data = ref([])
+const preview = ref([])
 
 const parseFile = () => {
-    ParseVisFile(file_path.value).then(res => {
+    ParseVisFile(filePath.value).then(res => {
         if (res.code == 0) {
-            console.log(res.data)
-
             res.data.forEach(item => {
                 options.value = Object.keys(item).map(item => {
                     return { label: item, value: item };
                 });
             })
-            pre_data.value = res.data
+            preview.value = res.data
             message.info(res.message)
         } else {
             message.error(res.message)
         }
     })
 }
-
 
 const columns = [
     {
@@ -63,15 +59,11 @@ const columns = [
         key: "face_ret"
     }
 ];
-
 const options = ref([])
-
 const template = ref('')
-
 const mention = (value) => {
     template.value = value
 }
-
 const llm = () => {
     console.log(template.value)
 }
@@ -79,11 +71,17 @@ const llm = () => {
 
 <template>
     <n-spin :show="handling">
+        <div class="m-4 text-3xl">
+            <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
+            <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                LLM大模型
+            </n-gradient-text>
+        </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
                 <select-path :placeholder="placeholderInput" type="file" @click-path="selectInput" />
                 <n-button strong dashed round @click="parseFile">选择图生文生成的文件</n-button>
-                <n-data-table :columns="columns" :data="pre_data" />
+                <n-data-table :columns="columns" :data="preview" />
                 <n-form-item label="提问模版">
                     <n-mention type="textarea" :options="options" prefix="%" :on-update:value="mention"/>
                 </n-form-item>

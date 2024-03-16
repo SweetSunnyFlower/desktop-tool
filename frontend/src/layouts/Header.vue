@@ -20,7 +20,8 @@ import { RouterLink } from "vue-router";
 import {
     DocumentTextSharp,
     DocumentOutline,
-    HomeOutline
+    HomeOutline,
+    ImageOutline,
 } from "@vicons/ionicons5";
 function renderIcon(icon) {
     return () => h(NIcon, null, { default: () => h(icon) });
@@ -51,7 +52,7 @@ const menuOptions = [
             { default: () => "图生文" }
         ),
         key: "image-to-text",
-        icon: renderIcon(DocumentOutline)
+        icon: renderIcon(ImageOutline)
     },
     {
         label: () => h(

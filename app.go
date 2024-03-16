@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
+	"tools/pkg/bos"
 
 	// "github.com/StackExchange/wmi"
 	"github.com/nguyenthenguyen/docx"
@@ -177,6 +180,7 @@ func (a *App) ParsePromptFile(file_path string) map[string]interface{} {
 }
 
 func (a *App) UploadImage(input string) map[string]interface{} {
+
 	imagePath := input
 
 	if imagePath == "" {
@@ -188,21 +192,68 @@ func (a *App) UploadImage(input string) map[string]interface{} {
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": "请选择文件夹"}
 	}
 
+	// 读取当前文件夹下源文件
+	files, err := os.ReadDir(imagePath)
+	if err != nil {
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+
+	client := bos.NewBos()
+
+	bosImages := make([]BosImage, 0)
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		// 获取文件后缀名
+		ext := filepath.Ext(file.Name())
+
+		if ext != ".jpg" && ext != ".png" {
+			continue
+		}
+		// 读取文件内容
+		content, err := os.Open(imagePath + "/" + file.Name())
+
+		if err != nil {
+			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+		}
+
+		byteImg, err := io.ReadAll(content)
+
+		if err != nil {
+			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+		}
+
+		_, out, err := client.Upload("", string(byteImg), "image2text")
+
+		if err != nil {
+			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+		}
+
+		bosImages = append(bosImages, BosImage{
+			ID:  1,
+			URL: out,
+		})
+	}
+
+	// 遍历文件, 如果是图片类型，就上传bos
+
 	if response == "" {
 		response = "上传成功"
 	}
 
 	// mock upload image
-	bosImages := []BosImage{
-		{
-			ID:  1,
-			URL: "https://www.baidu.com/img/bd_logo1.png",
-		},
-		{
-			ID:  2,
-			URL: "https://www.baidu.com/img/bd_logo1.png",
-		},
-	}
+	// bosImages := []BosImage{
+	// 	{
+	// 		ID:  1,
+	// 		URL: "https://www.baidu.com/img/bd_logo1.png",
+	// 	},
+	// 	{
+	// 		ID:  2,
+	// 		URL: "https://www.baidu.com/img/bd_logo1.png",
+	// 	},
+	// }
 
 	return map[string]interface{}{"code": 0, "data": bosImages, "message": response}
 }

@@ -4,20 +4,18 @@ import { h, ref, onMounted, reactive } from "vue";
 import { Replace, UploadImage, ParsePromptFile } from '../../wailsjs/go/main/App'
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
 
-const data = reactive(
-    {
-        "input": "",
-        "output": "",
-        "data": [
-            {
-                key: "",
-                value: ""
-            }
-        ],
-        "file_name": []
-    }
-)
-
+const message = useMessage();
+const notification = useNotification()
+const imagesDir = ref("")
+const promptFile = ref("")
+const outputDir = ref("")
+const preview = ref([])
+const imagePlaceholder = ref("选择图片")
+const promptPlaceholder = ref("选择图片提示词文件")
+const placeholderOutput = ref("选择输出位置")
+const showModal = ref(false)
+const outputText = ref("输出结果")
+const handling = ref(false)
 const columns = [
     {
         title: "ID",
@@ -43,7 +41,7 @@ const columns = [
                 value: row.prompt,
                 placeholder: "请输入提示词,或者导入",
                 onUpdateValue(v) {
-                    pre_data.value[index].prompt = v;
+                    preview.value[index].prompt = v;
                 }
             });
         }
@@ -56,66 +54,41 @@ const columns = [
                 value: row.history,
                 placeholder: "请输入history,或者导入",
                 onUpdateValue(v) {
-                    pre_data.value[index].history = v;
+                    preview.value[index].history = v;
                 }
             });
         }
     }
 ];
 
-const pre_data = ref([
-
-])
-
-const message = useMessage();
-const notification = useNotification()
-
-const placeholderInput = ref("输入")
-
-const placeholderOutput = ref("输出")
-
-const placeholder = reactive(["输入文件名关键字", "输出文件名关键字"])
-
-const selectInput = (path) => {
-    data.input = path
-    console.log(data.input)
+const selectImages = (path) => {
+    imagesDir.value = path
 }
-const prompt_file = ref("")
-
+const selectOutputDir = (path) => {
+    outputDir.value = path
+}
 const selectPromptFile = (path) => {
-    prompt_file.value = path
+    promptFile.value = path
 }
 
 const parsePromptFile = () => {
-    console.log(prompt_file.value)
-    ParsePromptFile(prompt_file.value).then(res => {
-        if (res.code == 0) {
-
-            // 遍历pre_data 如果id存在，则将数据追加到data中
-
-            pre_data.value.forEach(item => {
-                let prompt = res.data.find(prompt => prompt.id == item.id)
-
-                console.log("aaaaa", prompt);
-
+    ParsePromptFile(promptFile.value).then(response => {
+        if (response.code == 0) {
+            // 遍历preview 如果id存在，则将数据追加到data中
+            preview.value.forEach(item => {
+                let prompt = response.data.find(prompt => prompt.id == item.id)
                 item["prompt"] = prompt.prompt
                 item["history"] = prompt.history
             })
-            message.info(res.message)
+            message.info(response.message)
             showModal.value = false
-            // pre_data.value = res.data
         } else {
-            message.error(res.message)
+            message.error(response.message)
         }
     })
 }
 
-const selectOutput = (path) => {
-    data.output = path
-    console.log(data.output)
-}
-
-const vis = () => {
+const imageToText = () => {
     handling.value = true
     let percent = 0
     let markAsRead = false
@@ -163,45 +136,21 @@ const vis = () => {
         percent = percent + 10
         outputText.value = "输出结果" + `${percent}%`
     }, 30)
-    console.log(pre_data.value)
-}
-
-const replace = () => {
-
-    Replace(data.input, data.output, data.data, data.file_name).then(res => {
-        if (res.code == 0) {
-            message.info(res.message)
-            data.data = [{
-                key: "",
-                value: ""
-            }]
-        } else {
-            message.error(res.message)
-        }
-    })
 }
 
 const uploadImage = () => {
-    UploadImage(data.input).then(res => {
-        if (res.code == 0) {
-            console.log(res.data)
-            message.info(res.message)
-            pre_data.value = res.data
+    handling.value = true
+    UploadImage(imagesDir.value).then(response => {
+        console.log(response)
+        handling.value = false
+        if (response.code == 0) {
+            message.info(response.message)
+            preview.value = response.data
         } else {
-            message.error(res.message)
+            message.error(response.message)
         }
     })
 }
-
-const handleInputInput = () => {
-    console.log(data.file_name)
-}
-
-const showModal = ref(false)
-
-const outputText = ref("输出结果")
-const handling = ref(false)
-
 </script>
 
 <template>
@@ -210,7 +159,7 @@ const handling = ref(false)
             <div>请选择关联的Prompt</div>
         </template>
         <div>
-            <select-path :placeholder="placeholderInput" type="file" @click-path="selectPromptFile" />
+            <select-path :placeholder="promptPlaceholder" type="file" @click-path="selectPromptFile" />
         </div>
         <template #action>
             <div class="flex flex-row justify-end">
@@ -219,23 +168,30 @@ const handling = ref(false)
         </template>
     </n-modal>
     <n-spin :show="handling">
+        <div class="m-4 text-3xl flex flex-row justify-between items-baseline">
+            <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
+            <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                图生文批量处理工具
+            </n-gradient-text>
+            <n-button type="error" dashed round class="text-xs">
+                初始化
+            </n-button>
+        </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <select-path :placeholder="placeholderInput" type="dir" @click-path="selectInput" />
+                <select-path :placeholder="imagePlaceholder" type="dir" @click-path="selectImages" />
                 <n-button strong dashed round @click="uploadImage">上传到Bos(文件名为ID)</n-button>
             </div>
 
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <n-data-table :columns="columns" :data="pre_data" />
+                <n-data-table :columns="columns" :data="preview" />
                 <n-button strong dashed round @click="showModal = true">上传关联prompt</n-button>
             </div>
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutput" />
-                <n-button strong dashed round @click="vis">{{ outputText }}</n-button>
+                <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutputDir" />
+                <n-button strong dashed round @click="imageToText">{{ outputText }}</n-button>
             </div>
         </div>
     </n-spin>
-
 </template>
-<style scoped>
-</style>
+<style scoped></style>
