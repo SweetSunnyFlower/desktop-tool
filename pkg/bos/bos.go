@@ -2,6 +2,7 @@ package bos
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"sync"
@@ -12,6 +13,7 @@ import (
 	"github.com/baidubce/bce-sdk-go/services/cdn"
 	"github.com/golang-module/carbon/v2"
 	"github.com/spf13/cast"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Bos struct {
@@ -72,10 +74,11 @@ func NewBos() *Bos {
 	return BosInstance
 }
 
-func (b *Bos) Upload(bucket, image string, name string) (innerpath string, outpath string, err error) {
+func (b *Bos) Upload(ctx context.Context, bucket, image string, name string) (innerpath string, outpath string, err error) {
 	path := config.GetString("app.env") + "/" + cast.ToString(carbon.Now().Year()) + "/" + cast.ToString(carbon.Now().Month()) + "/" + cast.ToString(carbon.Now().Day()) + "/" + name + "/"
 	filename := fmt.Sprintf("%x", md5.Sum([]byte(image))) + ".png"
 	fullname := path + filename
+
 	reader := bytes.NewBufferString(image)
 
 	if bucket == "" {
@@ -90,7 +93,12 @@ func (b *Bos) Upload(bucket, image string, name string) (innerpath string, outpa
 			return "", "", err
 		}
 	}
-	_, err = b.BosClient.PutObjectFromStream(bucket, fullname, reader, nil)
+
+	runtime.EventsEmit(ctx, "upload-image", "正在上传图片...:"+fullname)
+
+	response, err := b.BosClient.PutObjectFromStream(bucket, fullname, reader, nil)
+
+	runtime.EventsEmit(ctx, "upload-image", "bos response:"+response)
 
 	if err != nil {
 		logger.ErrorJSON("bos", "PutObjectFromStream", map[string]interface{}{
@@ -100,6 +108,8 @@ func (b *Bos) Upload(bucket, image string, name string) (innerpath string, outpa
 
 		return "", "", err
 	}
+
+	runtime.EventsEmit(ctx, "upload-image", "上传成功:"+fullname)
 
 	return "https://" + config.GetString("bos.inner_host") + "/" + fullname, "https://" + config.GetString("bos.host") + "/" + fullname, nil
 }

@@ -259,7 +259,7 @@ func (a *App) UploadImage(input string) map[string]interface{} {
 			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 		}
 
-		_, out, err := client.Upload("", string(byteImg), "image2text")
+		_, out, err := client.Upload(a.ctx, "", string(byteImg), "image2text")
 
 		if err != nil {
 			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}

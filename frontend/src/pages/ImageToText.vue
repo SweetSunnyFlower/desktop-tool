@@ -11,6 +11,9 @@ onMounted(() => {
     EventsOn("handling", function (data) {
         handling.value = data
     })
+    EventsOn("upload-image", function (data) {
+        log.value = log.value + data + "\n"
+    })
     EventsOn("Image2Text", function (data) {
         // 输入日志
         console.log(data)
@@ -33,9 +36,7 @@ onMounted(() => {
 const percent = ref(0)
 const message = useMessage();
 const notification = useNotification()
-const outputDir = ref("")
 const preview = ref([])
-const placeholderOutput = ref("选择输出位置")
 const showModal = ref(false)
 const outputText = ref("输出结果")
 const handling = ref(false)
@@ -191,34 +192,60 @@ const downloadTemplate = () => {
         console.log(1234, res)
     })
 }
+const more = [
+    {
+        label: '下载模版',
+        key: 'download-template',
+        disabled: false
+    },
+    {
+        label: '初始化',
+        key: 'init',
+        disabled: false
+    }
+]
+const handleSelectMore = (item) => {
+    if (item == "download-template") {
+        openFolder('download-template')
+    }
+    if (item == "init") {
+        preview.value = []
+        log.value = ""
+        handling.value = false
+        outputText.value = "输出结果"
+        percent.value = 0
+        showModal.value = false
+    }
+}
+const log = ref("")
+const height = ref(420)
 </script>
 
 <template>
     <n-spin :show="handling">
-        <div class="m-4 text-3xl flex flex-row justify-between items-baseline">
+        <div class="m-4 text-3xl flex flex-row justify-between items-center">
             <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
             <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
                 图生文批量处理工具
             </n-gradient-text>
-            <n-button type="error" dashed round class="text-xs">
-                初始化
-            </n-button>
+            <n-dropdown trigger="hover" :options="more" @select="handleSelectMore">
+                <span class="text-lg hover:cursor-pointer">...</span>
+            </n-dropdown>
         </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <n-data-table :columns="columns" :data="preview" />
+                <n-data-table :style="{ height: `${height}px` }" flex-height :columns="columns" :data="preview" />
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
-                    <n-button strong dashed round @click="openFolder('download-template')">下载模版</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
                     <n-button strong dashed round @click="openFolder('image2text')">{{ outputText }}</n-button>
-
                 </div>
             </div>
-            <!-- <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutputDir" />
-                <n-button strong dashed round @click="imageToText">{{ outputText }}</n-button>
-            </div> -->
+        </div>
+        <div class="m-4">
+            <div class=" bg-gray-100 rounded-xl p-3 mb-4">
+                <n-log :rows="10" :loading="handling" :log="log" show-line-numbers word-wrap language="javascript" />
+            </div>
         </div>
     </n-spin>
 </template>
