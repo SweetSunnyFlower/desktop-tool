@@ -114,7 +114,7 @@ const updatePrefixWithExpaned = (_keys, _option, meta) => {
 <template>
     <div class="select-path">
         <div class="close-input">
-            <input class="custom-input" type="text" v-model="input" :placeholder="placeholder">
+            <input class="custom-input" type="text" v-model="input" disabled :placeholder="placeholder">
             <n-icon v-if="showClose" size="20" color="#0e7a0d" @click="clearInput">
                 <close-outline />
             </n-icon>

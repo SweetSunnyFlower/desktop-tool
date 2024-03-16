@@ -5,6 +5,10 @@ export function GetDirs(arg1:string):Promise<{[key: string]: any}>;
 
 export function Greet(arg1:string,arg2:string):Promise<string>;
 
+export function OpenFile(arg1:string):Promise<{[key: string]: any}>;
+
+export function OpenFolder(arg1:string):Promise<{[key: string]: any}>;
+
 export function ParsePromptFile(arg1:string):Promise<{[key: string]: any}>;
 
 export function ParseVisFile(arg1:string):Promise<{[key: string]: any}>;

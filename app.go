@@ -9,10 +9,12 @@ import (
 	"runtime"
 	"strings"
 	"tools/pkg/bos"
+	"tools/pkg/logger"
 
 	// "github.com/StackExchange/wmi"
 	"github.com/nguyenthenguyen/docx"
 	// "github.com/StackExchange/wmi"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
@@ -162,7 +164,9 @@ type Prompt struct {
 }
 
 // 解析Prompt文件
-func (a *App) ParsePromptFile(file_path string) map[string]interface{} {
+func (a *App) ParsePromptFile(path string) map[string]interface{} {
+
+	// Excel读取文件内容，返回返回
 
 	// mock upload image
 	prompts := []Prompt{
@@ -329,4 +333,33 @@ func (a *App) Replace(input string, output string, args []map[string]string, fil
 	}
 
 	return map[string]interface{}{"code": 0, "data": []string{}, "message": response}
+}
+
+func (a *App) OpenFile(t string) map[string]interface{} {
+	file, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{})
+
+	if err != nil {
+		logger.ErrorString("app", "OpenFile", err.Error())
+		fmt.Println(err)
+	}
+
+	if t == "prompt" {
+		return a.ParsePromptFile(file)
+	}
+
+	return map[string]interface{}{"code": 0, "data": []string{}, "message": file}
+}
+func (a *App) OpenFolder(t string) map[string]interface{} {
+	folder, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{})
+
+	logger.InfoString("app", "OpenFolder", t+":"+folder)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	if t == "images" {
+		return a.UploadImage(folder)
+	}
+
+	return map[string]interface{}{"code": 0, "data": []string{}, "message": folder}
 }
