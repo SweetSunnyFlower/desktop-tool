@@ -1,13 +1,16 @@
 <script setup>
 import SelectPath from "../components/Path.vue";
 import { h, ref, onMounted, reactive } from "vue";
-import { OpenFile, OpenFolder } from '../../wailsjs/go/main/App'
+import { OpenFile, OpenFolder, DownloadTemplate } from '../../wailsjs/go/main/App'
+import { LogPrint, EventsOn } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
-
+onMounted(() => {
+    EventsOn("downloadTemplate", function (data) {
+        downloadCSV(data)
+    })
+})
 const message = useMessage();
 const notification = useNotification()
-const imagesDir = ref("")
-const promptFile = ref("")
 const outputDir = ref("")
 const preview = ref([])
 const placeholderOutput = ref("选择输出位置")
@@ -59,6 +62,22 @@ const columns = [
     }
 ];
 
+
+const downloadCSV = (data) =>{
+    const csvContent = data.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "data.csv");
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+
 const selectOutputDir = (path) => {
     outputDir.value = path
 }
@@ -71,6 +90,7 @@ const openFile = (type) => {
         if (type == "prompt") {
             parsePromptFile(res)
         }
+        
     })
 }
 
@@ -90,6 +110,7 @@ const parsePromptFile = (response) => {
 }
 
 const imageToText = () => {
+    LogPrint("hello world")
     handling.value = true
     let percent = 0
     let markAsRead = false
@@ -155,6 +176,14 @@ const openFolder = (type) => {
         if (type == "images") {
             uploadImage(res)
         }
+        if (type == "download-template") {
+            message.info(res.message)
+        }
+    })
+}
+const downloadTemplate = () => {
+    DownloadTemplate().then(res => {
+        console.log(1234, res)
     })
 }
 </script>
@@ -175,6 +204,7 @@ const openFolder = (type) => {
                 <n-data-table :columns="columns" :data="preview" />
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
+                    <n-button strong dashed round @click="openFolder('download-template')">下载模版</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
                 </div>
             </div>

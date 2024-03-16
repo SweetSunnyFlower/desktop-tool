@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
@@ -12,7 +13,10 @@ import (
 	"tools/pkg/logger"
 
 	// "github.com/StackExchange/wmi"
+	"github.com/golang-module/carbon/v2"
 	"github.com/nguyenthenguyen/docx"
+	"github.com/spf13/cast"
+
 	// "github.com/StackExchange/wmi"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -166,19 +170,45 @@ type Prompt struct {
 // 解析Prompt文件
 func (a *App) ParsePromptFile(path string) map[string]interface{} {
 
-	// Excel读取文件内容，返回返回
+	logger.InfoString("app", "ParsePromptFile", "解析文件"+path)
 
-	// mock upload image
-	prompts := []Prompt{
-		{
-			ID:     1,
-			Prompt: "a little boy",
-		},
-		{
-			ID:     2,
-			Prompt: "a little girl",
-		},
+	// Excel读取文件内容，返回返回
+	file, err := os.Open(path)
+	if err != nil {
+		logger.ErrorString("app", "ParsePromptFile", err.Error())
+		return map[string]interface{}{"code": 1, "data": map[string]interface{}{}, "message": "打开文件失败"}
 	}
+	defer file.Close()
+
+	// 创建CSV reader
+	reader := csv.NewReader(file)
+
+	logger.InfoString("app", "ParsePromptFile", "解析文件reader")
+
+	// 读取CSV文件中的内容
+	data, err := reader.ReadAll()
+
+	logger.InfoString("app", "ParsePromptFile", "解析文件ReadAll")
+
+	if err != nil {
+		logger.ErrorString("app", "ParsePromptFile", err.Error())
+		return map[string]interface{}{"code": 1, "data": map[string]interface{}{}, "message": "打开文件失败"}
+	}
+
+	prompts := make([]Prompt, 0)
+	for i, data := range data {
+		if i == 0 {
+			continue
+		}
+		prompts = append(prompts, Prompt{
+			ID:      cast.ToInt(data[0]),
+			Prompt:  data[1],
+			History: data[2],
+		})
+
+	}
+
+	logger.InfoJSON("app", "ParsePromptFile", prompts)
 
 	return map[string]interface{}{"code": 0, "data": prompts, "message": "解析成功"}
 }
@@ -361,5 +391,74 @@ func (a *App) OpenFolder(t string) map[string]interface{} {
 		return a.UploadImage(folder)
 	}
 
+	// 下载模版
+	if t == "download-template" {
+		return a.DownloadCsvTemplate(folder)
+	}
+
 	return map[string]interface{}{"code": 0, "data": []string{}, "message": folder}
+}
+
+func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
+	// 拷贝 template/tempalte.csv 到 folder
+	file, err := os.Open("template/template.csv")
+	if err != nil {
+		logger.ErrorString("app", "DownloadCsvTemplate", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+	defer file.Close()
+	// 创建CSV reader
+	reader := csv.NewReader(file)
+	// 读取CSV文件中的内容
+	records, err := reader.ReadAll()
+	if err != nil {
+		logger.ErrorString("app", "DownloadCsvTemplate", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+
+	outputFilePath := folder + "/template_" + carbon.Now().String() + ".csv"
+
+	// 写入CSV文件
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		logger.ErrorString("app", "outputFile", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+	defer outputFile.Close()
+
+	// 创建CSV writer
+	writer := csv.NewWriter(outputFile)
+	defer writer.Flush()
+
+	// 写入记录
+	for _, record := range records {
+		err := writer.Write(record)
+		if err != nil {
+			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+		}
+	}
+
+	return map[string]interface{}{"code": 0, "data": []string{}, "message": "下载成功"}
+}
+
+func (a *App) DownloadTemplate() {
+	file, err := os.Open("template/template.csv")
+	if err != nil {
+		logger.ErrorString("app", "DownloadTemplate", err.Error())
+		return
+	}
+	defer file.Close()
+
+	// 创建CSV reader
+	reader := csv.NewReader(file)
+
+	// 读取CSV文件中的内容
+	records, err := reader.ReadAll()
+
+	if err != nil {
+		logger.ErrorString("app", "DownloadTemplate", err.Error())
+		return
+	}
+
+	wailsruntime.EventsEmit(a.ctx, "downloadTemplate", records)
 }
