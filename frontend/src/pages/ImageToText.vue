@@ -8,7 +8,29 @@ onMounted(() => {
     EventsOn("downloadTemplate", function (data) {
         downloadCSV(data)
     })
+    EventsOn("handling", function (data) {
+        handling.value = data
+    })
+    EventsOn("Image2Text", function (data) {
+        // 输入日志
+        console.log(data)
+
+        percent.value = percent.value + 1
+        outputText.value = "输出结果" + `${percent.value / preview.value.length * 100}%`
+
+        if (preview.value.length == percent.value) {
+            notification.create({
+                title: '导出通知',
+                content: `请查看输出目录`,
+                meta: new Date().toLocaleString(),
+                onClose: () => {
+
+                }
+            })
+        }
+    })
 })
+const percent = ref(0)
 const message = useMessage();
 const notification = useNotification()
 const outputDir = ref("")
@@ -63,7 +85,7 @@ const columns = [
 ];
 
 
-const downloadCSV = (data) =>{
+const downloadCSV = (data) => {
     const csvContent = data.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -78,10 +100,6 @@ const downloadCSV = (data) =>{
     }
 }
 
-const selectOutputDir = (path) => {
-    outputDir.value = path
-}
-
 const openFile = (type) => {
     handling.value = true
     OpenFile(type).then(res => {
@@ -90,7 +108,7 @@ const openFile = (type) => {
         if (type == "prompt") {
             parsePromptFile(res)
         }
-        
+
     })
 }
 
@@ -111,8 +129,6 @@ const parsePromptFile = (response) => {
 
 const imageToText = () => {
     LogPrint("hello world")
-    handling.value = true
-    let percent = 0
     let markAsRead = false
     const n = notification.create({
         title: '重要通知',
@@ -140,24 +156,7 @@ const imageToText = () => {
             }
         }
     })
-    outputText.value = "输出结果" + `${percent}%`
-    let interval = setInterval(() => {
-        if (percent >= 100) {
-            handling.value = false
-            clearInterval(interval)
-            const n = notification.create({
-                title: '导出通知',
-                content: `请查看输出目录`,
-                meta: new Date().toLocaleString(),
-                onClose: () => {
 
-                }
-            })
-            return
-        }
-        percent = percent + 10
-        outputText.value = "输出结果" + `${percent}%`
-    }, 30)
 }
 
 const uploadImage = (response) => {
@@ -171,12 +170,18 @@ const uploadImage = (response) => {
 
 const openFolder = (type) => {
     handling.value = true
-    OpenFolder(type).then(res => {
-        handling.value = false
+    let body = ""
+    if (type == "image2text") {
+        body = JSON.stringify(preview.value)
+        console.log(type, body)
+    }
+    OpenFolder(type, body).then(res => {
         if (type == "images") {
+            handling.value = false
             uploadImage(res)
         }
         if (type == "download-template") {
+            handling.value = false
             message.info(res.message)
         }
     })
@@ -206,12 +211,14 @@ const downloadTemplate = () => {
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
                     <n-button strong dashed round @click="openFolder('download-template')">下载模版</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
+                    <n-button strong dashed round @click="openFolder('image2text')">{{ outputText }}</n-button>
+
                 </div>
             </div>
-            <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
+            <!-- <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
                 <select-path :placeholder="placeholderOutput" type="dir" @click-path="selectOutputDir" />
                 <n-button strong dashed round @click="imageToText">{{ outputText }}</n-button>
-            </div>
+            </div> -->
         </div>
     </n-spin>
 </template>

@@ -379,7 +379,7 @@ func (a *App) OpenFile(t string) map[string]interface{} {
 
 	return map[string]interface{}{"code": 0, "data": []string{}, "message": file}
 }
-func (a *App) OpenFolder(t string) map[string]interface{} {
+func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 	folder, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{})
 
 	logger.InfoString("app", "OpenFolder", t+":"+folder)
@@ -396,7 +396,26 @@ func (a *App) OpenFolder(t string) map[string]interface{} {
 		return a.DownloadCsvTemplate(folder)
 	}
 
+	if t == "image2text" {
+		a.Image2Text(folder, data)
+		return map[string]interface{}{"code": 0, "data": []string{}, "message": "批量处理中..."}
+	}
+
 	return map[string]interface{}{"code": 0, "data": []string{}, "message": folder}
+}
+
+func (a *App) Image2Text(folder string, data string) {
+
+	logger.InfoString("app", "Image2Text", data)
+
+	wailsruntime.EventsEmit(a.ctx, "handling", true)
+
+	result := make(map[string]interface{})
+
+	wailsruntime.EventsEmit(a.ctx, "Image2Text", result)
+
+	wailsruntime.EventsEmit(a.ctx, "handling", false)
+
 }
 
 func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
