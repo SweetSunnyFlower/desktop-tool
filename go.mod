@@ -7,6 +7,7 @@ toolchain go1.21.5
 require (
 	github.com/baidubce/bce-sdk-go v0.9.170
 	github.com/golang-module/carbon/v2 v2.3.10
+	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/viper v1.18.2
 	github.com/wailsapp/wails/v2 v2.8.0

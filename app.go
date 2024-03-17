@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,7 +16,6 @@ import (
 	// "github.com/StackExchange/wmi"
 	"github.com/golang-module/carbon/v2"
 	"github.com/nguyenthenguyen/docx"
-	"github.com/spf13/cast"
 
 	// "github.com/StackExchange/wmi"
 	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -157,12 +157,12 @@ func IsDir(path string) bool {
 var response string = ""
 
 type BosImage struct {
-	ID  int    `json:"id"`
+	ID  string `json:"id"`
 	URL string `json:"url"`
 }
 
 type Prompt struct {
-	ID      int    `json:"id"`
+	ID      string `json:"id"`
 	Prompt  string `json:"prompt"`
 	History string `json:"history"`
 }
@@ -201,9 +201,9 @@ func (a *App) ParsePromptFile(path string) map[string]interface{} {
 			continue
 		}
 		prompts = append(prompts, Prompt{
-			ID:      cast.ToInt(data[0]),
-			Prompt:  data[1],
-			History: data[2],
+			ID:      strings.TrimSpace(data[0]),
+			Prompt:  strings.TrimSpace(data[1]),
+			History: strings.TrimSpace(data[2]),
 		})
 
 	}
@@ -232,64 +232,70 @@ func (a *App) UploadImage(input string) map[string]interface{} {
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 	}
 
-	client := bos.NewBos()
+	count := len(files)
 
-	bosImages := make([]BosImage, 0)
+	isFinish := make(chan bool, count)
 
 	for _, file := range files {
 		if file.IsDir() {
 			continue
 		}
-		// 获取文件后缀名
-		ext := filepath.Ext(file.Name())
 
-		if ext != ".jpg" && ext != ".png" {
-			continue
-		}
-		// 读取文件内容
-		content, err := os.Open(imagePath + "/" + file.Name())
-
-		if err != nil {
-			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-		}
-
-		byteImg, err := io.ReadAll(content)
-
-		if err != nil {
-			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-		}
-
-		_, out, err := client.Upload(a.ctx, "", string(byteImg), "image2text")
-
-		if err != nil {
-			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-		}
-
-		bosImages = append(bosImages, BosImage{
-			ID:  1,
-			URL: out,
-		})
+		go a.uploadBos(imagePath, file, isFinish)
 	}
 
-	// 遍历文件, 如果是图片类型，就上传bos
+	<-isFinish
 
-	if response == "" {
-		response = "上传成功"
+	return map[string]interface{}{"code": 0, "data": map[string]interface{}{}, "message": "上传完成"}
+}
+
+func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) {
+	client := bos.NewBos()
+
+	filename := file.Name()
+	// 获取文件后缀名
+	ext := filepath.Ext(filename)
+
+	if ext != ".jpg" && ext != ".png" && ext != ".jpeg" {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":不支持的图片格式,直接跳过")
+		isFinish <- true
+		return
 	}
 
-	// mock upload image
-	// bosImages := []BosImage{
-	// 	{
-	// 		ID:  1,
-	// 		URL: "https://www.baidu.com/img/bd_logo1.png",
-	// 	},
-	// 	{
-	// 		ID:  2,
-	// 		URL: "https://www.baidu.com/img/bd_logo1.png",
-	// 	},
-	// }
+	filenameWithoutExt := strings.TrimSuffix(filename, ext)
 
-	return map[string]interface{}{"code": 0, "data": bosImages, "message": response}
+	// 读取文件内容
+	content, err := os.Open(imagePath + "/" + filename)
+
+	if err != nil {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":打开文件失败,error:"+err.Error())
+		isFinish <- true
+		return
+	}
+
+	byteImg, err := io.ReadAll(content)
+
+	if err != nil {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":读取文件内容失败,error:"+err.Error())
+		isFinish <- true
+		return
+	}
+
+	_, out, err := client.Upload("", string(byteImg), "image2text")
+
+	if err != nil {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":上传bos失败,error:"+err.Error())
+		isFinish <- true
+		return
+	}
+
+	wailsruntime.EventsEmit(a.ctx, "uploadImageEvent", BosImage{
+		ID:  filenameWithoutExt,
+		URL: out,
+	})
+	wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":上传成功,url:"+out)
+
+	isFinish <- true
 }
 
 func (a *App) Replace(input string, output string, args []map[string]string, fileName []string) map[string]interface{} {
@@ -370,7 +376,12 @@ func (a *App) OpenFile(t string) map[string]interface{} {
 
 	if err != nil {
 		logger.ErrorString("app", "OpenFile", err.Error())
-		fmt.Println(err)
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+
+	}
+
+	if file == "" {
+		return map[string]interface{}{"code": 2, "data": []string{}, "message": ""}
 	}
 
 	if t == "prompt" {
@@ -384,37 +395,45 @@ func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 
 	logger.InfoString("app", "OpenFolder", t+":"+folder)
 
-	if err != nil {
-		fmt.Println(err)
+	if folder == "" {
+		return map[string]interface{}{"code": 2, "data": []string{}, "message": ""}
 	}
+
+	if err != nil {
+		logger.ErrorString("app", "OpenFolder", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", true)
+
+	response := map[string]interface{}{"code": 0, "data": []string{}, "message": folder}
+
 	if t == "images" {
-		return a.UploadImage(folder)
+		response = a.UploadImage(folder)
 	}
 
 	// 下载模版
 	if t == "download-template" {
-		return a.DownloadCsvTemplate(folder)
+		response = a.DownloadCsvTemplate(folder)
 	}
 
 	if t == "image2text" {
 		a.Image2Text(folder, data)
-		return map[string]interface{}{"code": 0, "data": []string{}, "message": "批量处理中..."}
+		response = map[string]interface{}{"code": 0, "data": []string{}, "message": "批量处理中..."}
 	}
 
-	return map[string]interface{}{"code": 0, "data": []string{}, "message": folder}
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
+
+	return response
 }
 
 func (a *App) Image2Text(folder string, data string) {
 
 	logger.InfoString("app", "Image2Text", data)
 
-	wailsruntime.EventsEmit(a.ctx, "handling", true)
-
 	result := make(map[string]interface{})
 
-	wailsruntime.EventsEmit(a.ctx, "Image2Text", result)
-
-	wailsruntime.EventsEmit(a.ctx, "handling", false)
+	wailsruntime.EventsEmit(a.ctx, "image2TextEvent", result)
 
 }
 

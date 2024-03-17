@@ -1,27 +1,38 @@
 <script setup>
 import SelectPath from "../components/Path.vue";
 import { h, ref, onMounted, reactive } from "vue";
-import { OpenFile, OpenFolder, DownloadTemplate } from '../../wailsjs/go/main/App'
+import { OpenFile, OpenFolder } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
+import { DownloadOutline } from "@vicons/ionicons5";
 onMounted(() => {
+    // 下载模版事件
     EventsOn("downloadTemplate", function (data) {
         downloadCSV(data)
     })
-    EventsOn("handling", function (data) {
+    // 处理事件
+    EventsOn("handlingEvent", function (data) {
         handling.value = data
     })
-    EventsOn("upload-image", function (data) {
+    // 日志事件
+    EventsOn("logEvent", function (data) {
         log.value = log.value + data + "\n"
     })
-    EventsOn("Image2Text", function (data) {
+    // 上传图片事件
+    EventsOn("uploadImageEvent", function(data) {
+        console.log(data)
+        preview.value = [...preview.value, data]
+    })
+    // 图生文事件
+    EventsOn("image2TextEvent", function (data) {
         // 输入日志
         console.log(data)
 
         percent.value = percent.value + 1
-        outputText.value = "输出结果" + `${percent.value / preview.value.length * 100}%`
+        outputText.value = "文生图" + `${percent.value / preview.value.length * 100}%`
 
         if (preview.value.length == percent.value) {
+            image2textfinish.value = true
             notification.create({
                 title: '导出通知',
                 content: `请查看输出目录`,
@@ -33,12 +44,13 @@ onMounted(() => {
         }
     })
 })
+const image2textfinish = ref(false)
 const percent = ref(0)
 const message = useMessage();
 const notification = useNotification()
 const preview = ref([])
 const showModal = ref(false)
-const outputText = ref("输出结果")
+const outputText = ref("文生图")
 const handling = ref(false)
 const columns = [
     {
@@ -85,7 +97,7 @@ const columns = [
     }
 ];
 
-
+// 后端返回内容，前端下载文件
 const downloadCSV = (data) => {
     const csvContent = data.map(row => row.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -101,18 +113,7 @@ const downloadCSV = (data) => {
     }
 }
 
-const openFile = (type) => {
-    handling.value = true
-    OpenFile(type).then(res => {
-        console.log(res)
-        handling.value = false
-        if (type == "prompt") {
-            parsePromptFile(res)
-        }
-
-    })
-}
-
+// 后端解析Prompt返回内容，前端追加内容到table中
 const parsePromptFile = (response) => {
     if (response.code == 0) {
         // 遍历preview 如果id存在，则将数据追加到data中
@@ -128,70 +129,57 @@ const parsePromptFile = (response) => {
     }
 }
 
-const imageToText = () => {
-    LogPrint("hello world")
-    let markAsRead = false
-    const n = notification.create({
-        title: '重要通知',
-        content: `请不要操作当前界面`,
-        meta: new Date().toLocaleString(),
-        action: () =>
-            h(
-                NButton,
-                {
-                    text: true,
-                    type: 'primary',
-                    onClick: () => {
-                        markAsRead = true
-                        n.destroy()
-                    }
-                },
-                {
-                    default: () => '已读'
-                }
-            ),
-        onClose: () => {
-            if (!markAsRead) {
-                message.warning('请设为已读')
-                return false
-            }
-        }
-    })
-
-}
-
+// 上传图片回调
 const uploadImage = (response) => {
     if (response.code == 0) {
         message.info(response.message)
-        preview.value = response.data
     } else {
         message.error(response.message)
     }
 }
 
+// 打开文件
+const openFile = (type) => {
+    OpenFile(type).then(res => {
+        if (res.code == 2) {
+            return
+        }
+        if (res.code == 1) {
+            message.error(res.message)
+            return
+        }
+        if (type == "prompt") {
+            parsePromptFile(res)
+        }
+    })
+}
+
+// 打开文件夹
 const openFolder = (type) => {
-    handling.value = true
     let body = ""
     if (type == "image2text") {
         body = JSON.stringify(preview.value)
         console.log(type, body)
     }
     OpenFolder(type, body).then(res => {
+        if (res.code == 2) {
+            return
+        }
+        if (res.code == 1) {
+            message.error(res.message)
+            return
+        }
         if (type == "images") {
-            handling.value = false
             uploadImage(res)
         }
         if (type == "download-template") {
-            handling.value = false
             message.info(res.message)
+        }
+        if (type == "download-data") {
         }
     })
 }
-const downloadTemplate = () => {
-    DownloadTemplate().then(res => {
-        console.log(1234, res)
-    })
-}
+
 const more = [
     {
         label: '下载模版',
@@ -212,9 +200,10 @@ const handleSelectMore = (item) => {
         preview.value = []
         log.value = ""
         handling.value = false
-        outputText.value = "输出结果"
+        outputText.value = "文生图"
         percent.value = 0
         showModal.value = false
+        image2textfinish.value = false
     }
 }
 const log = ref("")
@@ -238,13 +227,20 @@ const height = ref(420)
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
-                    <n-button strong dashed round @click="openFolder('image2text')">{{ outputText }}</n-button>
+                    <n-button strong dashed round icon-placement="right" @click="openFolder('image2text')">
+                        <div class="flex flex-row justify-between items-center gap-1">
+                            {{ outputText }}
+                            <n-icon size="14" v-if="image2textfinish">
+                                <download-outline />
+                            </n-icon>
+                        </div>
+                    </n-button>
                 </div>
             </div>
         </div>
         <div class="m-4">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4">
-                <n-log :rows="10" :loading="handling" :log="log" show-line-numbers word-wrap language="javascript" />
+                <n-log :rows="10" :log="log" show-line-numbers word-wrap language="javascript" />
             </div>
         </div>
     </n-spin>
