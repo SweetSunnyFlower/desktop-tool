@@ -3,13 +3,15 @@
 
 export function DownloadCsvTemplate(arg1:string):Promise<{[key: string]: any}>;
 
+export function DownloadImage2Text(arg1:string,arg2:string):Promise<{[key: string]: any}>;
+
 export function DownloadTemplate():Promise<void>;
 
 export function GetDirs(arg1:string):Promise<{[key: string]: any}>;
 
 export function Greet(arg1:string,arg2:string):Promise<string>;
 
-export function Image2Text(arg1:string,arg2:string):Promise<void>;
+export function Image2Text(arg1:string):Promise<void>;
 
 export function OpenFile(arg1:string):Promise<{[key: string]: any}>;
 

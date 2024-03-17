@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 	"tools/pkg/bos"
 	"tools/pkg/logger"
 	"tools/pkg/vis"
@@ -178,6 +179,17 @@ type ImageToText struct {
 	HistoryMsg [][]string `json:"history_msg"`
 	OcrRet     string     `json:"ocr_ret"`
 	FaceRet    string     `json:"face_ret"`
+}
+
+type ImageToTextDownload struct {
+	ID         string `json:"id"`
+	URL        string `json:"url"`
+	Prompt     string `json:"prompt"`
+	History    string `json:"history"`
+	Result     string `json:"result"`
+	HistoryMsg string `json:"history_msg"`
+	OcrRet     string `json:"ocr_ret"`
+	FaceRet    string `json:"face_ret"`
 }
 
 // 解析Prompt文件
@@ -430,9 +442,9 @@ func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 		response = a.DownloadCsvTemplate(folder)
 	}
 
-	if t == "image2text" {
-		a.Image2Text(folder, data)
-		response = map[string]interface{}{"code": 0, "data": []string{}, "message": "批量处理中..."}
+	// 下载文生图数据
+	if t == "download-iamge2text" {
+		response = a.DownloadImage2Text(folder, data)
 	}
 
 	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
@@ -440,8 +452,9 @@ func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 	return response
 }
 
-func (a *App) Image2Text(folder string, data string) {
+func (a *App) Image2Text(data string) {
 
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", true)
 	logger.InfoString("app", "Image2Text", data)
 
 	var imageToTexts []*ImageToText
@@ -449,10 +462,14 @@ func (a *App) Image2Text(folder string, data string) {
 	err := json.Unmarshal([]byte(data), &imageToTexts)
 
 	if err != nil {
+		wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
+
 		wailsruntime.EventsEmit(a.ctx, "logEvent", err.Error())
 	}
 
 	visInstance := vis.NewVis()
+
+	count := len(imageToTexts)
 
 	for i, imageToText := range imageToTexts {
 		result, err := visInstance.Image2Text(imageToText.URL)
@@ -467,7 +484,13 @@ func (a *App) Image2Text(folder string, data string) {
 
 		logger.InfoJSON("app", "Image2Text", result)
 		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToTexts)
+
+		if i != count-1 {
+			time.Sleep(2 * time.Second)
+		}
 	}
+
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
 }
 
 func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
@@ -500,6 +523,60 @@ func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
 	// 创建CSV writer
 	writer := csv.NewWriter(outputFile)
 	defer writer.Flush()
+
+	// 写入记录
+	for _, record := range records {
+		err := writer.Write(record)
+		if err != nil {
+			return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+		}
+	}
+
+	return map[string]interface{}{"code": 0, "data": []string{}, "message": "下载成功"}
+}
+
+func (a *App) DownloadImage2Text(folder string, data string) map[string]interface{} {
+
+	var imageToTexts []*ImageToTextDownload
+
+	err := json.Unmarshal([]byte(data), &imageToTexts)
+
+	logger.InfoString("app", "DownloadImage2Text", data)
+
+	if err != nil {
+		logger.ErrorString("app", "DownloadImage2Text", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+
+	outputFilePath := folder + "/image2text_" + carbon.Now().String() + ".csv"
+
+	// 写入CSV文件
+	outputFile, err := os.Create(outputFilePath)
+	if err != nil {
+		logger.ErrorString("app", "outputFile", err.Error())
+		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
+	}
+	defer outputFile.Close()
+
+	// 创建CSV writer
+	writer := csv.NewWriter(outputFile)
+	defer writer.Flush()
+
+	var records [][]string = [][]string{{"id", "url", "prompt", "history", "result", "face_ret", "ocr_ret", "history_msg"}}
+
+	for _, imageToText := range imageToTexts {
+
+		var record []string
+		record = append(record, imageToText.ID)
+		record = append(record, imageToText.URL)
+		record = append(record, imageToText.Prompt)
+		record = append(record, imageToText.History)
+		record = append(record, imageToText.Result)
+		record = append(record, imageToText.FaceRet)
+		record = append(record, imageToText.OcrRet)
+		record = append(record, imageToText.HistoryMsg)
+		records = append(records, record)
+	}
 
 	// 写入记录
 	for _, record := range records {

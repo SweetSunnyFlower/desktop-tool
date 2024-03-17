@@ -6,6 +6,10 @@ export function DownloadCsvTemplate(arg1) {
   return window['go']['main']['App']['DownloadCsvTemplate'](arg1);
 }
 
+export function DownloadImage2Text(arg1, arg2) {
+  return window['go']['main']['App']['DownloadImage2Text'](arg1, arg2);
+}
+
 export function DownloadTemplate() {
   return window['go']['main']['App']['DownloadTemplate']();
 }
@@ -18,8 +22,8 @@ export function Greet(arg1, arg2) {
   return window['go']['main']['App']['Greet'](arg1, arg2);
 }
 
-export function Image2Text(arg1, arg2) {
-  return window['go']['main']['App']['Image2Text'](arg1, arg2);
+export function Image2Text(arg1) {
+  return window['go']['main']['App']['Image2Text'](arg1);
 }
 
 export function OpenFile(arg1) {

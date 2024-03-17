@@ -1,7 +1,7 @@
 <script setup>
 import SelectPath from "../components/Path.vue";
 import { h, ref, onMounted, reactive } from "vue";
-import { OpenFile, OpenFolder } from '../../wailsjs/go/main/App'
+import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
@@ -22,28 +22,44 @@ onMounted(() => {
     EventsOn("uploadImageEvent", function (data) {
         console.log(data)
         preview.value = [...preview.value, data]
+        console.log(preview.value)
     })
     // 图生文事件
     EventsOn("image2TextEvent", function (data) {
         // 输入日志
-        console.log(data)
-
         percent.value = percent.value + 1
-        outputText.value = "文生图" + `${percent.value / preview.value.length * 100}%`
+        outputText.value = "文生图" + `${(percent.value / preview.value.length * 100).toFixed(2)}%`
 
         preview.value.forEach(item => {
             let vis = data.find(vis => vis.id == item.id)
+            // 定义一个字符串变量用于保存结果
+            let result = "";
+
+            // 遍历二维数组并连接字符串
+            for (let i = 0; i < vis.history_msg.length; i++) {
+                let row = vis.history_msg[i];
+                for (let j = 0; j < row.length; j++) {
+                    result += row[j];
+                    // 在每个元素后面添加 "|"，除了最后一个元素
+                    if (j < row.length - 1) {
+                        result += "|";
+                    }
+                }
+                // 在每一行的末尾添加换行符，如果不需要可以去掉
+                result += "\n";
+            }
+
             item["result"] = vis.result
             item["face_ret"] = vis.face_ret
             item["ocr_ret"] = vis.ocr_ret
-            item["history_msg"] = vis.history_msg.join("|")
+            item["history_msg"] = result
         })
 
         if (preview.value.length == percent.value) {
             image2textfinish.value = true
             notification.create({
-                title: '导出通知',
-                content: `请查看输出目录`,
+                title: '图生文完成',
+                content: `如需下载，请点击下载按钮`,
                 meta: new Date().toLocaleString(),
                 onClose: () => {
 
@@ -78,83 +94,96 @@ const columns = [
         }
     },
     {
-        title: "Prompt",
-        key: "prompt",
-        render(row, index) {
-            return h(NInput, {
-                value: row.prompt,
-                placeholder: "请输入提示词,或者导入",
-                onUpdateValue(v) {
-                    preview.value[index].prompt = v;
+        title: "关联Prompts",
+        key: "prompts",
+        children: [
+            {
+                title: "Prompt",
+                key: "prompt",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.prompt,
+                        placeholder: "请输入提示词,或者导入",
+                        onUpdateValue(v) {
+                            preview.value[index].prompt = v;
+                        }
+                    });
                 }
-            });
-        }
+            },
+            {
+                title: "History",
+                key: "history",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.history,
+                        placeholder: "请输入history,或者导入",
+                        onUpdateValue(v) {
+                            preview.value[index].history = v;
+                        }
+                    });
+                }
+            },
+        ]
     },
     {
-        title: "History",
-        key: "history",
-        render(row, index) {
-            return h(NInput, {
-                value: row.history,
-                placeholder: "请输入history,或者导入",
-                onUpdateValue(v) {
-                    preview.value[index].history = v;
+        title: "文生图",
+        key: "image2text",
+        children: [
+            {
+                title: "Result",
+                key: "result",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.result,
+                        placeholder: "请输入result",
+                        onUpdateValue(v) {
+                            preview.value[index].result = v;
+                        }
+                    });
                 }
-            });
-        }
+            },
+            {
+                title: "face_ret",
+                key: "face_ret",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.face_ret,
+                        placeholder: "请输入face_ret",
+                        onUpdateValue(v) {
+                            preview.value[index].face_ret = v;
+                        }
+                    });
+                }
+            },
+            {
+                title: "oct_ret",
+                key: "oct_ret",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.oct_ret,
+                        placeholder: "请输入oct_ret",
+                        onUpdateValue(v) {
+                            preview.value[index].oct_ret = v;
+                        }
+                    });
+                }
+            },
+            {
+                title: "history_msg",
+                key: "history_msg",
+                render(row, index) {
+                    return h(NInput, {
+                        value: row.history_msg,
+                        placeholder: "请输入history_msg",
+                        onUpdateValue(v) {
+                            preview.value[index].history_msg = v;
+                        }
+                    });
+                }
+            }
+        ]
     },
-    {
-        title: "Result",
-        key: "result",
-        render(row, index) {
-            return h(NInput, {
-                value: row.result,
-                placeholder: "请输入result",
-                onUpdateValue(v) {
-                    preview.value[index].result = v;
-                }
-            });
-        }
-    },
-    {
-        title: "face_ret",
-        key: "face_ret",
-        render(row, index) {
-            return h(NInput, {
-                value: row.face_ret,
-                placeholder: "请输入face_ret",
-                onUpdateValue(v) {
-                    preview.value[index].face_ret = v;
-                }
-            });
-        }
-    },
-    {
-        title: "oct_ret",
-        key: "oct_ret",
-        render(row, index) {
-            return h(NInput, {
-                value: row.oct_ret,
-                placeholder: "请输入oct_ret",
-                onUpdateValue(v) {
-                    preview.value[index].oct_ret = v;
-                }
-            });
-        }
-    },
-    {
-        title: "history_msg",
-        key: "history_msg",
-        render(row, index) {
-            return h(NInput, {
-                value: row.history_msg,
-                placeholder: "请输入history_msg",
-                onUpdateValue(v) {
-                    preview.value[index].history_msg = v;
-                }
-            });
-        }
-    }
+
 ];
 
 // 后端返回内容，前端下载文件
@@ -217,10 +246,11 @@ const openFile = (type) => {
 // 打开文件夹
 const openFolder = (type) => {
     let body = ""
-    if (type == "image2text") {
+
+    if (type == "download-iamge2text") {
         body = JSON.stringify(preview.value)
-        console.log(type, body)
     }
+
     OpenFolder(type, body).then(res => {
         if (res.code == 2) {
             return
@@ -233,6 +263,9 @@ const openFolder = (type) => {
             uploadImage(res)
         }
         if (type == "download-template") {
+            message.info(res.message)
+        }
+        if (type == "download-iamge2text") {
             message.info(res.message)
         }
         if (type == "download-data") {
@@ -266,6 +299,16 @@ const handleSelectMore = (item) => {
         image2textfinish.value = false
     }
 }
+
+// 图生文接口
+const image2Text = () => {
+    let body = JSON.stringify(preview.value)
+    Image2Text(body).then(res => {
+        console.log(res)
+    })
+}
+const tableRef = ref();
+
 const log = ref("")
 const height = ref(420)
 </script>
@@ -283,15 +326,15 @@ const height = ref(420)
         </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <n-data-table size="small" :style="{ height: `${height}px` }" flex-height :columns="columns"
-                    :data="preview" />
+                <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false"
+                    :style="{ height: `${height}px` }" flex-height :columns="columns" :data="preview" />
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
-                    <n-button strong dashed round icon-placement="right" @click="openFolder('image2text')">
-                        <div class="flex flex-row justify-between items-center gap-1">
+                    <n-button strong dashed round icon-placement="right" @click="image2Text">
+                        <div class="flex flex-row justify-between items-center gap-4">
                             {{ outputText }}
-                            <n-icon size="14" v-if="image2textfinish">
+                            <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
                                 <download-outline />
                             </n-icon>
                         </div>
