@@ -78,12 +78,21 @@ const outputText = ref("文生图")
 const handling = ref(false)
 const columns = [
     {
-        title: "ID",
-        key: "id",
+        type: "selection",
     },
     {
+        title: "ID",
+        key: "id",
+        fixed: "left",
+        width: 100,
+        align: "center",
+    },
+    {
+        width: 100,
         title: "URL",
+        align: "center",
         key: "url",
+        fixed: "left",
         render(row, index) {
             return h(NImage, {
                 src: row.url,
@@ -96,10 +105,12 @@ const columns = [
     {
         title: "关联Prompts",
         key: "prompts",
+        align: "center",
         children: [
             {
                 title: "Prompt",
                 key: "prompt",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.prompt,
@@ -113,6 +124,7 @@ const columns = [
             {
                 title: "History",
                 key: "history",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.history,
@@ -128,13 +140,16 @@ const columns = [
     {
         title: "文生图",
         key: "image2text",
+        align: "center",
         children: [
             {
                 title: "Result",
                 key: "result",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.result,
+                        type: "textarea",
                         placeholder: "请输入result",
                         onUpdateValue(v) {
                             preview.value[index].result = v;
@@ -145,6 +160,7 @@ const columns = [
             {
                 title: "face_ret",
                 key: "face_ret",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.face_ret,
@@ -158,6 +174,7 @@ const columns = [
             {
                 title: "oct_ret",
                 key: "oct_ret",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.oct_ret,
@@ -171,6 +188,7 @@ const columns = [
             {
                 title: "history_msg",
                 key: "history_msg",
+                align: "center",
                 render(row, index) {
                     return h(NInput, {
                         value: row.history_msg,
@@ -311,6 +329,11 @@ const tableRef = ref();
 
 const log = ref("")
 const height = ref(420)
+const rowKey = (row) => row.id
+const checkedRowKeysRef = ref([]);
+const handleCheck = (rowKeys) => {
+    checkedRowKeysRef.value = rowKeys;
+}
 </script>
 
 <template>
@@ -326,8 +349,9 @@ const height = ref(420)
         </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false"
-                    :style="{ height: `${height}px` }" flex-height :columns="columns" :data="preview" />
+                <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
+                    :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
+                    flex-height :columns="columns" :data="preview" />
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
