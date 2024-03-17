@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"tools/pkg/bos"
 	"tools/pkg/logger"
+	"tools/pkg/vis"
 
 	// "github.com/StackExchange/wmi"
 	"github.com/golang-module/carbon/v2"
@@ -165,6 +167,17 @@ type Prompt struct {
 	ID      string `json:"id"`
 	Prompt  string `json:"prompt"`
 	History string `json:"history"`
+}
+
+type ImageToText struct {
+	ID         string     `json:"id"`
+	URL        string     `json:"url"`
+	Prompt     string     `json:"prompt"`
+	History    string     `json:"history"`
+	Result     string     `json:"result"`
+	HistoryMsg [][]string `json:"history_msg"`
+	OcrRet     string     `json:"ocr_ret"`
+	FaceRet    string     `json:"face_ret"`
 }
 
 // 解析Prompt文件
@@ -431,10 +444,30 @@ func (a *App) Image2Text(folder string, data string) {
 
 	logger.InfoString("app", "Image2Text", data)
 
-	result := make(map[string]interface{})
+	var imageToTexts []*ImageToText
 
-	wailsruntime.EventsEmit(a.ctx, "image2TextEvent", result)
+	err := json.Unmarshal([]byte(data), &imageToTexts)
 
+	if err != nil {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", err.Error())
+	}
+
+	visInstance := vis.NewVis()
+
+	for i, imageToText := range imageToTexts {
+		result, err := visInstance.Image2Text(imageToText.URL)
+		if err != nil {
+			wailsruntime.EventsEmit(a.ctx, "logEvent", err.Error())
+			continue
+		}
+		imageToTexts[i].FaceRet = result.FaceRet
+		imageToTexts[i].OcrRet = result.OcrRet
+		imageToTexts[i].HistoryMsg = result.HistoryMsg
+		imageToTexts[i].Result = result.Result
+
+		logger.InfoJSON("app", "Image2Text", result)
+		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToTexts)
+	}
 }
 
 func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {

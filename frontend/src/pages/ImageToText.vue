@@ -19,7 +19,7 @@ onMounted(() => {
         log.value = log.value + data + "\n"
     })
     // 上传图片事件
-    EventsOn("uploadImageEvent", function(data) {
+    EventsOn("uploadImageEvent", function (data) {
         console.log(data)
         preview.value = [...preview.value, data]
     })
@@ -30,6 +30,14 @@ onMounted(() => {
 
         percent.value = percent.value + 1
         outputText.value = "文生图" + `${percent.value / preview.value.length * 100}%`
+
+        preview.value.forEach(item => {
+            let vis = data.find(vis => vis.id == item.id)
+            item["result"] = vis.result
+            item["face_ret"] = vis.face_ret
+            item["ocr_ret"] = vis.ocr_ret
+            item["history_msg"] = vis.history_msg.join("|")
+        })
 
         if (preview.value.length == percent.value) {
             image2textfinish.value = true
@@ -91,6 +99,58 @@ const columns = [
                 placeholder: "请输入history,或者导入",
                 onUpdateValue(v) {
                     preview.value[index].history = v;
+                }
+            });
+        }
+    },
+    {
+        title: "Result",
+        key: "result",
+        render(row, index) {
+            return h(NInput, {
+                value: row.result,
+                placeholder: "请输入result",
+                onUpdateValue(v) {
+                    preview.value[index].result = v;
+                }
+            });
+        }
+    },
+    {
+        title: "face_ret",
+        key: "face_ret",
+        render(row, index) {
+            return h(NInput, {
+                value: row.face_ret,
+                placeholder: "请输入face_ret",
+                onUpdateValue(v) {
+                    preview.value[index].face_ret = v;
+                }
+            });
+        }
+    },
+    {
+        title: "oct_ret",
+        key: "oct_ret",
+        render(row, index) {
+            return h(NInput, {
+                value: row.oct_ret,
+                placeholder: "请输入oct_ret",
+                onUpdateValue(v) {
+                    preview.value[index].oct_ret = v;
+                }
+            });
+        }
+    },
+    {
+        title: "history_msg",
+        key: "history_msg",
+        render(row, index) {
+            return h(NInput, {
+                value: row.history_msg,
+                placeholder: "请输入history_msg",
+                onUpdateValue(v) {
+                    preview.value[index].history_msg = v;
                 }
             });
         }
@@ -223,7 +283,8 @@ const height = ref(420)
         </div>
         <div class="m-4 text-black">
             <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
-                <n-data-table :style="{ height: `${height}px` }" flex-height :columns="columns" :data="preview" />
+                <n-data-table size="small" :style="{ height: `${height}px` }" flex-height :columns="columns"
+                    :data="preview" />
                 <div class="flex flex-row justify-between gap-3">
                     <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
                     <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>

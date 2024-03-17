@@ -3,6 +3,7 @@ package vis
 import (
 	"bytes"
 	"crypto/md5"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"sync"
 	"tools/pkg/config"
+	"tools/pkg/logger"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -45,12 +47,15 @@ type FeatureResult struct {
 }
 
 type FeatureResultValue struct {
-	ErrNo         int    `json:"err_no"`
-	ErrMsg        string `json:"err_msg"`
-	Format        string `json:"format"`
-	Result        string `json:"result"`
-	WaitInQueueMs int    `json:"wait_in_queue_ms"`
-	ClassifyMs    int    `json:"classify_ms"`
+	ErrNo         int        `json:"err_no"`
+	ErrMsg        string     `json:"err_msg"`
+	Format        string     `json:"format"`
+	Result        string     `json:"result"`
+	FaceRet       string     `json:"face_ret"`
+	HistoryMsg    [][]string `json:"history_msg"`
+	OcrRet        string     `json:"ocr_ret"`
+	WaitInQueueMs int        `json:"wait_in_queue_ms"`
+	ClassifyMs    int        `json:"classify_ms"`
 }
 
 var VisInstalce *Vis
@@ -64,20 +69,24 @@ func NewVis() *Vis {
 	return VisInstalce
 }
 
-func (v *Vis) Image2Text(imageUrl string) (string, error) {
-	imageData := []byte("")
+func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
+	imageData, err := v.GetImageData(imageUrl)
+
+	if err != nil {
+		return nil, err
+	}
 
 	resourceKey := v.Md5(base64.StdEncoding.EncodeToString(imageData))
 
 	body, err := v.BuildBody(imageData, map[string]any{"session_id": resourceKey, "extra_info": ""})
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	header := v.BuildHeader(imageData)
 
-	url := config.GetString("vis.image2text_url") + "?business_name=" + config.GetString("app.business_name") + "&feature_name=" + config.GetString("app.feature_name")
+	url := config.GetString("vis.image2text_url") + "?business_name=" + config.GetString("vis.business_name") + "&feature_name=" + config.GetString("vis.feature_name")
 	payload := &Payload{
 		URI:     url,
 		Method:  http.MethodPost,
@@ -85,29 +94,40 @@ func (v *Vis) Image2Text(imageUrl string) (string, error) {
 		Body:    bytes.NewBuffer(body),
 	}
 
-	fullURL := fmt.Sprintf("%s/%s", config.GetString("vis.host"), url)
+	logger.InfoJSON("vis", "Image2Text", payload)
+
+	fullURL := fmt.Sprintf("%s%s", config.GetString("vis.host"), url)
+
+	logger.InfoString("vis", "Image2Text", fullURL)
 
 	req, err := http.NewRequest(payload.Method, fullURL, payload.Body)
 
+	// set 请求头
+	for k, v := range payload.Headers {
+		req.Header.Set(k, v)
+	}
+
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	response, err := v.Client.Do(req)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
 
+	logger.InfoString("vis", "Image2Text", string(data))
+
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var res any
+	var res interface{}
 
 	// 这里返回的是框架返回的结果包裹业务返回的结果，生产环境都返回了，测试环境只返回了业务结果
 	if config.GetBool("app.debug") {
@@ -117,29 +137,63 @@ func (v *Vis) Image2Text(imageUrl string) (string, error) {
 	}
 
 	if err = json.Unmarshal(data, res); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// 生产环境，需要解读出来业务结果
-	if !config.GetBool("app.debug") {
-		res, err = v.ParseFeatureResult(res.(*Response))
-		if err != nil {
-			return "", err
+	var featureResult *FeatureResult
+
+	switch self := res.(type) {
+	case *FeatureResult:
+		if self.Value == "" {
+			return nil, errors.New("vic feature value is empty")
 		}
+		featureResult = self
+	case *Response:
+		re, err := v.ParseFeatureResult(self)
+		if err != nil {
+			return nil, err
+		}
+		featureResult = re
+	default:
+		logger.ErrorString("vis", "Image2Text", "Unknown type")
+		return nil, errors.New("unknown type")
 	}
 
-	if res.(*FeatureResult).Value == "" {
-		return "", errors.New("vic feature value is empty")
+	var featureResultValue *FeatureResultValue
+	logger.InfoString("vis", "Image2Text featureResult", featureResult.Value)
+	err = json.Unmarshal([]byte(featureResult.Value), &featureResultValue)
+
+	if err != nil {
+		logger.ErrorString("vis", "Image2Text Unmarshal featureResult", err.Error())
+		return nil, err
 	}
 
-	featureResultValue := FeatureResultValue{}
-	_ = json.Unmarshal([]byte(res.(*FeatureResult).Value), &featureResultValue)
-
-	if featureResultValue.Result == "" {
-		return "", errors.New("feature result value is empty")
+	if featureResultValue == nil {
+		return nil, errors.New("feature result value is empty")
 	}
 
-	return featureResultValue.Result, nil
+	return featureResultValue, nil
+}
+
+func (v *Vis) GetImageData(imageUrl string) ([]byte, error) {
+	// 图片下载跳过https证书验证，2023.06.29 图片下载可用性下降
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
+	}
+	client := &http.Client{Transport: tr}
+
+	response, err := client.Get(imageUrl)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+	data, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (v *Vis) ParseFeatureResult(response *Response) (*FeatureResult, error) {
