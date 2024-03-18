@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"sync"
 	"tools/pkg/config"
-	"tools/pkg/logger"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -94,11 +93,11 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 		Body:    bytes.NewBuffer(body),
 	}
 
-	logger.InfoJSON("vis", "Image2Text", payload)
+	// logger.InfoJSON("vis", "Image2Text", payload)
 
 	fullURL := fmt.Sprintf("%s%s", config.GetString("vis.host"), url)
 
-	logger.InfoString("vis", "Image2Text", fullURL)
+	// logger.InfoString("vis", "Image2Text", fullURL)
 
 	req, err := http.NewRequest(payload.Method, fullURL, payload.Body)
 
@@ -121,7 +120,7 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 
 	data, err := io.ReadAll(response.Body)
 
-	logger.InfoString("vis", "Image2Text", string(data))
+	// logger.InfoString("vis", "Image2Text", string(data))
 
 	if err != nil {
 		return nil, err
@@ -155,16 +154,16 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 		}
 		featureResult = re
 	default:
-		logger.ErrorString("vis", "Image2Text", "Unknown type")
+		// logger.ErrorString("vis", "Image2Text", "Unknown type")
 		return nil, errors.New("unknown type")
 	}
 
 	var featureResultValue *FeatureResultValue
-	logger.InfoString("vis", "Image2Text featureResult", featureResult.Value)
+	// logger.InfoString("vis", "Image2Text featureResult", featureResult.Value)
 	err = json.Unmarshal([]byte(featureResult.Value), &featureResultValue)
 
 	if err != nil {
-		logger.ErrorString("vis", "Image2Text Unmarshal featureResult", err.Error())
+		// logger.ErrorString("vis", "Image2Text Unmarshal featureResult", err.Error())
 		return nil, err
 	}
 

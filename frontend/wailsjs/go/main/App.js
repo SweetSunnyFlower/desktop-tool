@@ -10,10 +10,6 @@ export function DownloadImage2Text(arg1, arg2) {
   return window['go']['main']['App']['DownloadImage2Text'](arg1, arg2);
 }
 
-export function DownloadTemplate() {
-  return window['go']['main']['App']['DownloadTemplate']();
-}
-
 export function GetDirs(arg1) {
   return window['go']['main']['App']['GetDirs'](arg1);
 }

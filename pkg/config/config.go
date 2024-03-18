@@ -2,7 +2,7 @@
 package config
 
 import (
-	"os"
+	"bytes"
 	"tools/pkg/helpers"
 
 	"github.com/spf13/cast"
@@ -36,9 +36,9 @@ func init() {
 }
 
 // InitConfig 初始化配置信息，完成对环境变量以及 config 信息的加载
-func InitConfig(env string) {
+func InitConfig(envContent []byte) {
 	// 1. 加载环境变量
-	loadEnv(env)
+	loadEnv(envContent)
 	// 2. 注册配置信息
 	loadConfig()
 }
@@ -49,21 +49,10 @@ func loadConfig() {
 	}
 }
 
-func loadEnv(envSuffix string) {
+func loadEnv(envContent []byte) {
 
-	// 默认加载 .env 文件，如果有传参 --env=name 的话，加载 .env.name 文件
-	envPath := ".env"
-	if len(envSuffix) > 0 {
-		filepath := ".env." + envSuffix
-		if _, err := os.Stat(filepath); err == nil {
-			// 如 .env.testing 或 .env.stage
-			envPath = filepath
-		}
-	}
-
-	// 加载 env
-	viper.SetConfigName(envPath)
-	if err := viper.ReadInConfig(); err != nil {
+	err := viper.ReadConfig(bytes.NewReader(envContent))
+	if err != nil {
 		panic(err)
 	}
 

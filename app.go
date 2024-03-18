@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 	"tools/pkg/bos"
-	"tools/pkg/logger"
 	"tools/pkg/vis"
 
 	// "github.com/StackExchange/wmi"
@@ -195,12 +194,19 @@ type ImageToTextDownload struct {
 // 解析Prompt文件
 func (a *App) ParsePromptFile(path string) map[string]interface{} {
 
-	logger.InfoString("app", "ParsePromptFile", "解析文件"+path)
+	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "开始解析文件:" + path,
+	})
 
 	// Excel读取文件内容，返回返回
 	file, err := os.Open(path)
 	if err != nil {
-		logger.ErrorString("app", "ParsePromptFile", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "打开文件:" + path + "失败",
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": map[string]interface{}{}, "message": "打开文件失败"}
 	}
 	defer file.Close()
@@ -208,15 +214,19 @@ func (a *App) ParsePromptFile(path string) map[string]interface{} {
 	// 创建CSV reader
 	reader := csv.NewReader(file)
 
-	logger.InfoString("app", "ParsePromptFile", "解析文件reader")
-
 	// 读取CSV文件中的内容
 	data, err := reader.ReadAll()
 
-	logger.InfoString("app", "ParsePromptFile", "解析文件ReadAll")
-
+	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "开始读取文件:" + path + "内容",
+	})
 	if err != nil {
-		logger.ErrorString("app", "ParsePromptFile", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "读取文件:" + path + "内容失败",
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": map[string]interface{}{}, "message": "打开文件失败"}
 	}
 
@@ -233,7 +243,12 @@ func (a *App) ParsePromptFile(path string) map[string]interface{} {
 
 	}
 
-	logger.InfoJSON("app", "ParsePromptFile", prompts)
+	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+		"type":  "info",
+		"msg":   "解析文件:" + path + "完成",
+		"error": err.Error(),
+		"data":  prompts,
+	})
 
 	return map[string]interface{}{"code": 0, "data": prompts, "message": "解析成功"}
 }
@@ -400,9 +415,12 @@ func (a *App) OpenFile(t string) map[string]interface{} {
 	file, err := wailsruntime.OpenFileDialog(a.ctx, wailsruntime.OpenDialogOptions{})
 
 	if err != nil {
-		logger.ErrorString("app", "OpenFile", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "打开文件:" + t + "失败",
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-
 	}
 
 	if file == "" {
@@ -418,14 +436,25 @@ func (a *App) OpenFile(t string) map[string]interface{} {
 func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 	folder, err := wailsruntime.OpenDirectoryDialog(a.ctx, wailsruntime.OpenDialogOptions{})
 
-	logger.InfoString("app", "OpenFolder", t+":"+folder)
+	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "打开文件夹:" + folder,
+	})
 
 	if folder == "" {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type": "info",
+			"msg":  "取消打开文件夹",
+		})
 		return map[string]interface{}{"code": 2, "data": []string{}, "message": ""}
 	}
 
 	if err != nil {
-		logger.ErrorString("app", "OpenFolder", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "打开文件夹:" + folder + "失败",
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 	}
 
@@ -455,16 +484,20 @@ func (a *App) OpenFolder(t string, data string) map[string]interface{} {
 func (a *App) Image2Text(data string) {
 
 	wailsruntime.EventsEmit(a.ctx, "handlingEvent", true)
-	logger.InfoString("app", "Image2Text", data)
+
+	defer wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
 
 	var imageToTexts []*ImageToText
 
 	err := json.Unmarshal([]byte(data), &imageToTexts)
 
 	if err != nil {
-		wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
-
-		wailsruntime.EventsEmit(a.ctx, "logEvent", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "图生文数据解析失败",
+			"error": err.Error(),
+			"data":  data,
+		})
 	}
 
 	visInstance := vis.NewVis()
@@ -472,9 +505,20 @@ func (a *App) Image2Text(data string) {
 	count := len(imageToTexts)
 
 	for i, imageToText := range imageToTexts {
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type": "info",
+			"msg":  "图生文请求开始",
+			"data": imageToText,
+		})
+
 		result, err := visInstance.Image2Text(imageToText.URL)
 		if err != nil {
-			wailsruntime.EventsEmit(a.ctx, "logEvent", err.Error())
+			wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+				"type":  "error",
+				"msg":   "图生文请求失败",
+				"error": err.Error(),
+				"data":  imageToText,
+			})
 			continue
 		}
 		imageToTexts[i].FaceRet = result.FaceRet
@@ -482,40 +526,31 @@ func (a *App) Image2Text(data string) {
 		imageToTexts[i].HistoryMsg = result.HistoryMsg
 		imageToTexts[i].Result = result.Result
 
-		logger.InfoJSON("app", "Image2Text", result)
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type": "info",
+			"msg":  "图生文请求成功",
+			"data": result,
+		})
+
 		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToTexts)
 
 		if i != count-1 {
 			time.Sleep(2 * time.Second)
 		}
 	}
-
-	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
 }
 
 func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
-	// 拷贝 template/tempalte.csv 到 folder
-	file, err := os.Open("template/template.csv")
-	if err != nil {
-		logger.ErrorString("app", "DownloadCsvTemplate", err.Error())
-		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-	}
-	defer file.Close()
-	// 创建CSV reader
-	reader := csv.NewReader(file)
-	// 读取CSV文件中的内容
-	records, err := reader.ReadAll()
-	if err != nil {
-		logger.ErrorString("app", "DownloadCsvTemplate", err.Error())
-		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
-	}
-
 	outputFilePath := folder + "/template_" + carbon.Now().String() + ".csv"
 
 	// 写入CSV文件
 	outputFile, err := os.Create(outputFilePath)
 	if err != nil {
-		logger.ErrorString("app", "outputFile", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "下载Prompt模版失败:下载路径" + folder,
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 	}
 	defer outputFile.Close()
@@ -524,6 +559,7 @@ func (a *App) DownloadCsvTemplate(folder string) map[string]interface{} {
 	writer := csv.NewWriter(outputFile)
 	defer writer.Flush()
 
+	records := [][]string{{"ID", "Prompt", "History"}}
 	// 写入记录
 	for _, record := range records {
 		err := writer.Write(record)
@@ -539,12 +575,20 @@ func (a *App) DownloadImage2Text(folder string, data string) map[string]interfac
 
 	var imageToTexts []*ImageToTextDownload
 
+	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "开始解析图生文数据",
+	})
+
 	err := json.Unmarshal([]byte(data), &imageToTexts)
 
-	logger.InfoString("app", "DownloadImage2Text", data)
-
 	if err != nil {
-		logger.ErrorString("app", "DownloadImage2Text", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "文生图数据解析失败",
+			"data":  data,
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 	}
 
@@ -553,7 +597,11 @@ func (a *App) DownloadImage2Text(folder string, data string) map[string]interfac
 	// 写入CSV文件
 	outputFile, err := os.Create(outputFilePath)
 	if err != nil {
-		logger.ErrorString("app", "outputFile", err.Error())
+		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "文生图数据下载，文件:" + outputFilePath + "创建失败",
+			"error": err.Error(),
+		})
 		return map[string]interface{}{"code": 1, "data": []string{}, "message": err.Error()}
 	}
 	defer outputFile.Close()
@@ -587,26 +635,4 @@ func (a *App) DownloadImage2Text(folder string, data string) map[string]interfac
 	}
 
 	return map[string]interface{}{"code": 0, "data": []string{}, "message": "下载成功"}
-}
-
-func (a *App) DownloadTemplate() {
-	file, err := os.Open("template/template.csv")
-	if err != nil {
-		logger.ErrorString("app", "DownloadTemplate", err.Error())
-		return
-	}
-	defer file.Close()
-
-	// 创建CSV reader
-	reader := csv.NewReader(file)
-
-	// 读取CSV文件中的内容
-	records, err := reader.ReadAll()
-
-	if err != nil {
-		logger.ErrorString("app", "DownloadTemplate", err.Error())
-		return
-	}
-
-	wailsruntime.EventsEmit(a.ctx, "downloadTemplate", records)
 }

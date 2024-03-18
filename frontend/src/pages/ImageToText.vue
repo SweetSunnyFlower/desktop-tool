@@ -6,10 +6,6 @@ import { LogPrint, EventsOn } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
 onMounted(() => {
-    // 下载模版事件
-    EventsOn("downloadTemplate", function (data) {
-        downloadCSV(data)
-    })
     // 处理事件
     EventsOn("handlingEvent", function (data) {
         handling.value = data
@@ -203,22 +199,6 @@ const columns = [
     },
 
 ];
-
-// 后端返回内容，前端下载文件
-const downloadCSV = (data) => {
-    const csvContent = data.map(row => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "data.csv");
-        link.style.visibility = "hidden";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
 
 // 后端解析Prompt返回内容，前端追加内容到table中
 const parsePromptFile = (response) => {
