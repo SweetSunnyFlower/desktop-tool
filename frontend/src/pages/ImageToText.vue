@@ -1,29 +1,19 @@
 <script setup>
-import { h, ref, onBeforeMount, onUnmounted } from "vue";
+import { h, ref, onMounted, onUnmounted } from "vue";
 import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
-import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
+import { useMessage, useNotification, NInput, NImage, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
 onUnmounted(() => {
     // 取消事件监听
     EventsOff("handlingEvent")
-    EventsOff("logEvent")
     EventsOff("uploadImageEvent")
     EventsOff("image2TextEvent")
 })
-onBeforeMount(() => {
+onMounted(() => {
     // 处理事件
     EventsOn("handlingEvent", function (data) {
         handling.value = data
-    })
-    // 日志事件
-    EventsOn("logEvent", function (data) {
-        if (typeof data === "string") {
-            log.value = log.value + data + "\n"
-        }
-        if (typeof data === "object") {
-            log.value = log.value + JSON.stringify(data, null, 2) + "\n"
-        }
     })
     // 上传图片事件
     EventsOn("uploadImageEvent", function (data) {
@@ -282,31 +272,14 @@ const openFolder = (type) => {
     })
 }
 
-const more = [
-    {
-        label: '下载模版',
-        key: 'download-template',
-        disabled: false
-    },
-    {
-        label: '初始化',
-        key: 'init',
-        disabled: false
-    }
-]
-const handleSelectMore = (item) => {
-    if (item == "download-template") {
-        openFolder('download-template')
-    }
-    if (item == "init") {
-        preview.value = []
-        log.value = ""
-        handling.value = false
-        outputText.value = "文生图"
-        percent.value = 0
-        showModal.value = false
-        image2textfinish.value = false
-    }
+
+const clear = () => {
+    preview.value = []
+    handling.value = false
+    outputText.value = "文生图"
+    percent.value = 0
+    showModal.value = false
+    image2textfinish.value = false
 }
 
 // 图生文接口
@@ -318,7 +291,6 @@ const image2Text = () => {
 }
 const tableRef = ref();
 
-const log = ref("")
 const height = ref(420)
 const rowKey = (row) => row.id
 const checkedRowKeysRef = ref([]);
@@ -329,37 +301,49 @@ const handleCheck = (rowKeys) => {
 
 <template>
     <n-spin :show="handling">
-        <div class="m-4 text-3xl flex flex-row justify-between items-center">
+        <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
             <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
             <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
                 图生文批量处理工具
             </n-gradient-text>
-            <n-dropdown trigger="hover" :options="more" @select="handleSelectMore">
-                <span class="text-lg hover:cursor-pointer">...</span>
-            </n-dropdown>
+            <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFolder('images')">
+                    选择照片
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFolder('download-template')">
+                    下载prompt模版
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFile('prompt')">
+                    上传关联prompt
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="image2Text">
+                    <div class="flex flex-row justify-between items-center gap-2">
+                        {{ outputText }}
+                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
+                            <download-outline />
+                        </n-icon>
+                    </div>
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="clear">
+                    清理数据
+                </button>
+            </div>
         </div>
         <div class="m-4 text-black">
-            <div class=" bg-gray-100 rounded-xl p-3 mb-4 flex flex-col gap-3">
+            <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
                 <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
                     :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
                     flex-height :columns="columns" :data="preview" />
-                <div class="flex flex-row justify-between gap-3">
-                    <n-button strong dashed round @click="openFolder('images')">选择照片</n-button>
-                    <n-button strong dashed round @click="openFile('prompt')">上传关联prompt</n-button>
-                    <n-button strong dashed round icon-placement="right" @click="image2Text">
-                        <div class="flex flex-row justify-between items-center gap-4">
-                            {{ outputText }}
-                            <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
-                                <download-outline />
-                            </n-icon>
-                        </div>
-                    </n-button>
-                </div>
-            </div>
-        </div>
-        <div class="m-4">
-            <div class=" bg-gray-100 rounded-xl p-3 mb-4">
-                <n-log :rows="10" :log="log" show-line-numbers word-wrap language="javascript" />
             </div>
         </div>
     </n-spin>

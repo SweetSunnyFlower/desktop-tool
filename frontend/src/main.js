@@ -1,5 +1,4 @@
 import {createApp} from 'vue';
-
 import App from './App.vue';
 // 通用字体
 import 'vfonts/Lato.css';
@@ -7,11 +6,9 @@ import 'vfonts/Lato.css';
 import 'vfonts/FiraCode.css';
 // 导入css样式
 import "./assets/css/style.css"
-
 import routes from './routers/router'
-
 import naive from 'naive-ui';
-
+import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
@@ -20,6 +17,10 @@ const router = createRouter({
 })
 
 const app = createApp(App)
+const pinia = createPinia()
+
 app.use(naive)
 app.use(router)
+app.use(pinia)
+
 app.mount('#app')

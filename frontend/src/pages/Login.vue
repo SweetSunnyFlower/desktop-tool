@@ -178,7 +178,6 @@ body {
   border-radius: 50px;
   background: #ecf0f3;
   box-shadow: inset 4px 4px 4px #d1d9e6, inset -4px -4px 4px #f9f9f9;
-
 }
 
 /**/

@@ -1,6 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* #app {
-    height: 100vh;
-} */
+
+@layer base {
+    .w-button {
+        @apply text-gray-700 truncate nm-flat-gray-100 hover:nm-flat-gray-100-lg leading-5 uppercase tracking-widest transition duration-200 ease-in-out transform hover:scale-110 flex flex-row justify-between items-center rounded-full text-xs font-semibold p-2;
+    }
+}
