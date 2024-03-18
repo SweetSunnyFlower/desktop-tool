@@ -5,6 +5,10 @@ export const useImage2TextStore = defineStore('image2text', () => {
     // 表格预览数据
     const preview = ref([])
 
+    const image2textCount = ref(0)
+
+    const image2textfinish = ref(false)
+
     const clearPreview = () => {
         preview.value = []
     }
@@ -27,22 +31,45 @@ export const useImage2TextStore = defineStore('image2text', () => {
         })
     }
 
-    // 图生文进度百分比，遍历预览数据，判断是否完成
-    const getIsFinish = () => {
-        if (preview.value.length == 0) {
-            return false
-        }
-        let image2TextCount = 0
-        // 查找出result != "" 的数量
-        preview.value.forEach(item => {
-            console.log(item)
-            if (item.result && item.result != "") {
-                image2TextCount = image2TextCount + 1
-            }
-        })
-
-        return image2TextCount == preview.value.length
+    const clearimage2textCount = () => {
+        image2textCount.value = 0
     }
 
-    return { preview, getPreview, appendPreview, getIsFinish, bindPrompt, clearPreview }
+    // 图生文完成
+    const bindImage2Text = (data) => {
+        image2textCount.value = image2textCount.value + 1
+        preview.value.forEach(item => {
+            let vis = data.find(vis => vis.id == item.id)
+            // 定义一个字符串变量用于保存结果
+            let result = "";
+
+            // 遍历二维数组并连接字符串
+            for (let i = 0; i < vis.history_msg.length; i++) {
+                let row = vis.history_msg[i];
+                for (let j = 0; j < row.length; j++) {
+                    result += row[j];
+                    // 在每个元素后面添加 "|"，除了最后一个元素
+                    if (j < row.length - 1) {
+                        result += "|";
+                    }
+                }
+                // 在每一行的末尾添加换行符，如果不需要可以去掉
+                result += "\n";
+            }
+
+            item["result"] = vis.result
+            item["face_ret"] = vis.face_ret
+            item["ocr_ret"] = vis.ocr_ret
+            item["history_msg"] = result
+        })
+
+        image2textfinish.value = image2textCount.value == preview.value.length
+    }
+
+    // 图生文进度百分比，遍历预览数据，判断是否完成
+    const getIsFinish = () => {
+        return image2textfinish.value
+    }
+
+    return { preview, getPreview, appendPreview, getIsFinish, bindPrompt, clearPreview, bindImage2Text , clearimage2textCount}
 })

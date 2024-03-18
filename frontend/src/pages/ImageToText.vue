@@ -1,4 +1,3 @@
-
 <template>
     <n-spin :show="handling">
         <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
@@ -7,24 +6,16 @@
                 图生文批量处理工具
             </n-gradient-text>
             <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFolder('images')">
+                <button class="w-button px-4 py-2" @click="openFolder('images')">
                     选择照片
                 </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFolder('download-template')">
+                <button class="w-button px-4 py-2" @click="openFolder('download-template')">
                     下载prompt模版
                 </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFile('prompt')">
+                <button class="w-button px-4 py-2" @click="openFile('prompt')">
                     上传关联prompt
                 </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="image2Text">
+                <button class="w-button px-4 py-2" @click="image2Text">
                     <div class="flex flex-row justify-between items-center gap-2">
                         {{ outputText }}
                         <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
@@ -32,24 +23,24 @@
                         </n-icon>
                     </div>
                 </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="clear">
+                <button class="w-button px-4 py-2" @click="clear">
                     清理数据
                 </button>
             </div>
         </div>
-        <div class="m-4 text-black">
-            <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
+        <div class="m-4 text-gray-700 grid lg:grid-cols-4 sm:grid-cols-3 gap-5">
+            <image-to-text-view v-for="(item, index) in preview" :preview="item"/>
+            <!-- <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
                 <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
                     :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
                     flex-height :columns="columns" :data="preview" />
-            </div>
+            </div> -->
         </div>
     </n-spin>
 </template>
 
 <script setup>
+import ImageToTextView from "../components/ImageToText.vue"
 import { h, ref, onMounted, onUnmounted, watchEffect } from "vue";
 import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
@@ -77,35 +68,11 @@ onMounted(() => {
     EventsOn("handlingEvent", function (data) {
         handling.value = data
     })
-   
+
     // 图生文事件
     EventsOn("image2TextEvent", function (data) {
-        preview.value.forEach(item => {
-            let vis = data.find(vis => vis.id == item.id)
-            // 定义一个字符串变量用于保存结果
-            let result = "";
-
-            // 遍历二维数组并连接字符串
-            for (let i = 0; i < vis.history_msg.length; i++) {
-                let row = vis.history_msg[i];
-                for (let j = 0; j < row.length; j++) {
-                    result += row[j];
-                    // 在每个元素后面添加 "|"，除了最后一个元素
-                    if (j < row.length - 1) {
-                        result += "|";
-                    }
-                }
-                // 在每一行的末尾添加换行符，如果不需要可以去掉
-                result += "\n";
-            }
-
-            item["result"] = vis.result
-            item["face_ret"] = vis.face_ret
-            item["ocr_ret"] = vis.ocr_ret
-            item["history_msg"] = result
-        })
-
-        if (image2textfinish) {
+        image2textStore.bindImage2Text(data)
+        if (image2textfinish.value) {
             notification.create({
                 title: '图生文完成',
                 content: `如需下载，请点击下载按钮`,
@@ -305,6 +272,7 @@ const openFolder = (type) => {
 
 const clear = () => {
     image2textStore.clearPreview()
+    image2textStore.clearimage2textCount()
 }
 
 // 图生文接口
@@ -312,11 +280,12 @@ const image2Text = () => {
     let body = JSON.stringify(preview.value)
     Image2Text(body)
 }
-const tableRef = ref();
 
+const tableRef = ref();
 const height = ref(420)
-const rowKey = (row) => row.id
 const checkedRowKeysRef = ref([]);
+
+const rowKey = (row) => row.id
 const handleCheck = (rowKeys) => {
     checkedRowKeysRef.value = rowKeys;
 }
