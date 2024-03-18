@@ -1,11 +1,11 @@
 <template>
 
     <div class="w-card-active relative">
-        <div>{{ props.preview.id }}</div>
+        <div class="bg-black rounded-full absolute right-2 top-2 px-2 py-1 flex justify-center items-center text-white font-semibold text-xs">{{ props.preview.id }}</div>
         <div class="overflow-hidden h-16">
             <n-image class="w-auto overflow-hidden" object-fit="cover" :src="props.preview.url" />
         </div>
-        <div class="flex flex-col items-start mb-4">
+        <div class="flex flex-col items-start mb-3">
             <div class="text-gray-700 text-sm my-2 font-bold">PROMPT&HISTORY</div>
             <div class="text-xs mb-2 flex flex-col justify-between gap-1 w-full">
                 <span class="mr-1">prompt:</span>
@@ -17,7 +17,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-start mb-4">
+        <div class="flex flex-col items-start">
             <div class="text-gray-700 text-sm my-2 font-bold">Image To Text</div>
             <div class="text-xs mb-2 flex flex-col justify-between gap-1 w-full">
                 <span class="mr-1">result:</span>

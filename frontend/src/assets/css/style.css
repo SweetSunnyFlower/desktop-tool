@@ -17,9 +17,10 @@
     width: 100%;
     height: 60px;
     margin: 4px 0;
-    padding-left: 2px;
+    padding: 2px;
     /* font-size: 12px; */
-    /* letter-spacing: 0.15px; */
+    letter-spacing: 0.15px;
+
     border: none;
     outline: none;
     font-family: "Montserrat", sans-serif;
