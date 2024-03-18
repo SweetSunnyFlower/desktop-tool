@@ -8,7 +8,7 @@
     }
 
     .w-card-active {
-        @apply text-gray-700 rounded truncate nm-flat-gray-100 hover:nm-flat-gray-100-lg leading-5 uppercase tracking-widest transition duration-200 ease-in-out transform hover:scale-105 text-xs font-semibold p-1;
+        @apply text-gray-700 rounded truncate nm-flat-gray-100 hover:nm-flat-gray-100-lg leading-5 uppercase tracking-widest transition duration-200 ease-in-out transform  text-xs font-semibold p-1;
     }
 }
 

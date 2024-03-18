@@ -9,20 +9,20 @@
             <router-view />
             <n-layout-footer bordered position="absolute" :class="open ? 'h-auto' : 'h-0'">
                 <div class="relative nm-flat-neutral-100-lg p-2">
-                    <div class="absolute right-16 -top-5 w-9 h-9 flex flex-row justify-center items-center rounded-full w-button"
-                        @click="switchLog(!open)">
+                    <div class="absolute   w-9 h-9 flex flex-row justify-center items-center rounded-full w-button"
+                        :class="open ? '-top-5 right-16' : '-top-10 right-2'" @click="switchLog(!open)">
                         <n-icon>
                             <arrow-down-outline v-if="open" class="w-8 h-8" />
                             <arrow-up-outline v-if="!open" class="w-8 h-8" />
                         </n-icon>
                     </div>
                     <div class="absolute right-2 -top-5 w-9 h-9 flex flex-row justify-center items-center rounded-full w-button"
-                        @click="clearLog()">
+                        :class="open ? '-top-5' : 'top-0'" @click="clearLog()">
                         <n-icon>
                             <close-outline class="w-8 h-8" />
                         </n-icon>
                     </div>
-                    
+
                     <n-log :rows="10" :log="logs" show-line-numbers word-wrap language="javascript" />
                 </div>
             </n-layout-footer>
@@ -68,8 +68,8 @@ onMounted(() => {
         logsStore.print(data)
     })
 
-     // 上传图片事件
-     EventsOn("uploadImageEvent", function (data) {
+    // 上传图片事件
+    EventsOn("uploadImageEvent", function (data) {
         image2textStore.appendPreview(data)
     })
 })
@@ -139,5 +139,13 @@ const handleUpdateExpandedKeys = (keys) => {
 
 .n-menu-item-content {
     padding-left: 17px !important;
+}
+.n-menu .n-menu-item-content.n-menu-item-content--selected:hover,.n-menu .n-menu-item-content.n-menu-item-content--selected::before{
+    cursor: pointer;
+    border: none;
+    outline: none;
+    border-radius: 50px;
+    background: #ecf0f3;
+    box-shadow: inset 4px 4px 4px #d1d9e6, inset -4px -4px 4px #f9f9f9;
 }
 </style>

@@ -9,6 +9,20 @@ export const useImage2TextStore = defineStore('image2text', () => {
 
     const image2textfinish = ref(false)
 
+    const template = ref("")
+
+    const clearTemplate = () => {
+        template.value = ""
+    }
+
+    const getTemplate = () => {
+        return template.value
+    }
+
+    const setTemplate = (data) => {
+        template.value = data
+    }
+
     const clearPreview = () => {
         preview.value = []
     }
@@ -71,5 +85,5 @@ export const useImage2TextStore = defineStore('image2text', () => {
         return image2textfinish.value
     }
 
-    return { preview, getPreview, appendPreview, getIsFinish, bindPrompt, clearPreview, bindImage2Text , clearimage2textCount}
+    return { preview, getPreview, appendPreview, getIsFinish, bindPrompt, clearPreview, bindImage2Text , clearimage2textCount, template, clearTemplate, getTemplate, setTemplate }
 })

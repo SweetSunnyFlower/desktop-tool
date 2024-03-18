@@ -244,10 +244,9 @@ func (a *App) ParsePromptFile(path string) map[string]interface{} {
 	}
 
 	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
-		"type":  "info",
-		"msg":   "解析文件:" + path + "完成",
-		"error": err.Error(),
-		"data":  prompts,
+		"type": "info",
+		"msg":  "解析文件:" + path + "完成",
+		"data": prompts,
 	})
 
 	return map[string]interface{}{"code": 0, "data": prompts, "message": "解析成功"}

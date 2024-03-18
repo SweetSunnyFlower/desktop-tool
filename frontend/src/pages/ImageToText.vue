@@ -2,9 +2,20 @@
     <n-spin :show="handling">
         <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
             <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
-            <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
-                图生文批量处理工具
-            </n-gradient-text>
+            <div class="flex flex-row items-baseline gap-2">
+                <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                    图生文批量处理工具
+                </n-gradient-text>
+                <div class="flex flex-row font-bold text-xs gap-1">
+                    <div class="text-xs">横向</div>
+                    <div @click="changeDisplay"
+                        :class="imageDisplay ? 'h-4 w-10 nm-inset-gray-200 rounded-full flex justify-start' : 'h-4 w-10 nm-inset-gray-300 rounded-full flex justify-end'">
+                        <div class="h-4 w-4 bg-gray-200 shadow-gray-200 transform scale-110 rounded-full"></div>
+                    </div>
+                    <div class="text-xs">纵向</div>
+                </div>
+
+            </div>
             <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
                 <button class="w-button px-4 py-2" @click="openFolder('images')">
                     选择照片
@@ -23,13 +34,26 @@
                         </n-icon>
                     </div>
                 </button>
+                <button class="w-button px-4 py-2 relative overflow-visible" @click="showmetion = !showmetion">
+                    设置提问模版
+                    <n-mention v-if="showmetion" @click.stop="showmetion=showmetion" class="absolute top-12 left-0 overflow-hidden w-64 text-left" type="text"
+                        :value="template" :options="templateOptions" prefix="%" :on-update:value="mention" />
+                </button>
+                <button class="w-button px-4 py-2" @click="llm">
+                    <div class="flex flex-row justify-between items-center gap-2">
+                        大模型对话
+                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-llm')">
+                            <download-outline />
+                        </n-icon>
+                    </div>
+                </button>
                 <button class="w-button px-4 py-2" @click="clear">
                     清理数据
                 </button>
             </div>
         </div>
-        <div class="m-4 text-gray-700 grid lg:grid-cols-4 sm:grid-cols-3 gap-5">
-            <image-to-text-view v-for="(item, index) in preview" :preview="item"/>
+        <div class="m-4 text-gray-700 grid gap-5" :class="imageDisplay ? '' : 'lg:grid-cols-4 sm:grid-cols-3'">
+            <image-to-text-view v-for="(item, index) in preview" :preview="item" />
             <!-- <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
                 <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
                     :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
@@ -42,20 +66,45 @@
 <script setup>
 import ImageToTextView from "../components/ImageToText.vue"
 import { h, ref, onMounted, onUnmounted, watchEffect } from "vue";
-import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
+import { OpenFile, OpenFolder, Image2Text, LLM } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
 import { useImage2TextStore } from "../stores/image2text"
+import { useConfigStore } from "../stores/config"
 
 const image2textStore = useImage2TextStore()
+const configSotre = useConfigStore()
+
+const showmetion = ref(false)
+const imageDisplay = ref(false)
+
+const changeDisplay = () => {
+    configSotre.setImageDisplay()
+}
+
 // 预览数据
 const preview = ref([])
 const image2textfinish = ref(false)
 
+const template = ref("")
+
+const templateOptions = ref([])
+
+const mention = (value) => {
+    image2textStore.setTemplate(value)
+}
+
 watchEffect(() => {
     image2textfinish.value = image2textStore.getIsFinish()
     preview.value = image2textStore.getPreview()
+    imageDisplay.value = configSotre.getImageDisplay()
+    template.value = image2textStore.getTemplate()
+    preview.value.forEach(item => {
+        templateOptions.value = Object.keys(item).map(item => {
+            return { label: item, value: item };
+        });
+    })
 })
 
 onUnmounted(() => {
@@ -84,6 +133,7 @@ onMounted(() => {
         }
     })
 })
+
 const message = useMessage();
 const notification = useNotification()
 const outputText = ref("文生图")
@@ -281,6 +331,10 @@ const image2Text = () => {
     Image2Text(body)
 }
 
+const llm = () => {
+    let body = JSON.stringify(preview.value)
+    LLM(template.value, body)
+}
 const tableRef = ref();
 const height = ref(420)
 const checkedRowKeysRef = ref([]);

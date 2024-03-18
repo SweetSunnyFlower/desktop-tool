@@ -11,6 +11,8 @@ export function Greet(arg1:string,arg2:string):Promise<string>;
 
 export function Image2Text(arg1:string):Promise<void>;
 
+export function LLM(arg1:string,arg2:string):Promise<void>;
+
 export function OpenFile(arg1:string):Promise<{[key: string]: any}>;
 
 export function OpenFolder(arg1:string,arg2:string):Promise<{[key: string]: any}>;

@@ -22,6 +22,10 @@ export function Image2Text(arg1) {
   return window['go']['main']['App']['Image2Text'](arg1);
 }
 
+export function LLM(arg1, arg2) {
+  return window['go']['main']['App']['LLM'](arg1, arg2);
+}
+
 export function OpenFile(arg1) {
   return window['go']['main']['App']['OpenFile'](arg1);
 }

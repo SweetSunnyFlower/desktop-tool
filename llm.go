@@ -1,5 +1,9 @@
 package main
 
+import (
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+)
+
 type VisPrompt struct {
 	ID         int    `json:"id"`
 	Result     string `json:"result"`
@@ -8,7 +12,7 @@ type VisPrompt struct {
 	FaceRet    string `json:"face_ret"`
 }
 
-// 解析Prompt文件
+// 解析Prompt文件,deleted
 func (a *App) ParseVisFile(file_path string) map[string]interface{} {
 	// mock upload image
 	prompts := []VisPrompt{
@@ -29,4 +33,9 @@ func (a *App) ParseVisFile(file_path string) map[string]interface{} {
 	}
 
 	return map[string]interface{}{"code": 0, "data": prompts, "message": "解析成功"}
+}
+
+func (a *App) LLM(template, data string) {
+	// 调用llm
+	wailsruntime.EventsEmit(a.ctx, "llmEvent", 1)
 }
