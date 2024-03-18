@@ -2,6 +2,7 @@ package bos
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"fmt"
 	"sync"
@@ -11,12 +12,14 @@ import (
 	"github.com/baidubce/bce-sdk-go/services/cdn"
 	"github.com/golang-module/carbon/v2"
 	"github.com/spf13/cast"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 type Bos struct {
 	BosClient     *bos.Client
 	CdnClient     *cdn.Client
 	DefaultBucket string
+	ctx           context.Context
 }
 
 type Bucket struct {
@@ -31,15 +34,19 @@ var BosInstance *Bos
 
 var once sync.Once
 
-func NewBos() *Bos {
+func NewBos(ctx context.Context) *Bos {
 	once.Do(func() {
 
-		// logger.InfoJSON("bos", "NewBos", map[string]interface{}{
-		// 	"ak":                config.Get("bos.ak"),
-		// 	"sk":                config.Get("bos.sk"),
-		// 	"endpoint":          config.Get("bos.endpoint"),
-		// 	"redirect_disabled": config.GetBool("bos.redirect_disabled"),
-		// })
+		wailsruntime.EventsEmit(ctx, "logEvent", map[string]interface{}{
+			"type": "info",
+			"msg":  "初始化Bos实例",
+			"data": map[string]interface{}{
+				"ak":                config.Get("bos.ak"),
+				"sk":                config.Get("bos.sk"),
+				"endpoint":          config.Get("bos.endpoint"),
+				"redirect_disabled": config.GetBool("bos.redirect_disabled"),
+			},
+		})
 
 		bosConfig := &bos.BosClientConfiguration{
 			Ak:               config.Get("bos.ak"),
@@ -50,14 +57,21 @@ func NewBos() *Bos {
 
 		bosClient, err := bos.NewClientWithConfig(bosConfig)
 		if err != nil {
-			// logger.ErrorString("bos", "NewClientWithConfig", err.Error())
+			wailsruntime.EventsEmit(ctx, "logEvent", map[string]interface{}{
+				"type":  "error",
+				"msg":   "初始化Bos实例失败",
+				"error": err.Error(),
+			})
 			panic(err)
 		}
 
 		cdnClient, err := cdn.NewClient(bosConfig.Ak, bosConfig.Sk, config.GetString("cdn.endpoint"))
 		if err != nil {
-			// logger.ErrorString("bos", "NewClient", err.Error())
-
+			wailsruntime.EventsEmit(ctx, "logEvent", map[string]interface{}{
+				"type":  "error",
+				"msg":   "初始化Cdn实例失败",
+				"error": err.Error(),
+			})
 			panic(err)
 		}
 
@@ -65,6 +79,7 @@ func NewBos() *Bos {
 			BosClient:     bosClient,
 			CdnClient:     cdnClient,
 			DefaultBucket: config.GetString("bos.defaultBucket"),
+			ctx:           ctx,
 		}
 	})
 
@@ -85,7 +100,12 @@ func (b *Bos) Upload(bucket, image string, name string) (innerpath string, outpa
 
 	if !ok {
 		_, err := b.BosClient.PutBucket(bucket)
-		// logger.ErrorString("bos", "PutBucket:"+bucket, err.Error())
+		wailsruntime.EventsEmit(b.ctx, "logEvent", map[string]interface{}{
+			"type":   "error",
+			"msg":    "创建Bucket失败",
+			"error":  err.Error(),
+			"bucket": bucket,
+		})
 		if err != nil {
 			return "", "", err
 		}
@@ -94,10 +114,12 @@ func (b *Bos) Upload(bucket, image string, name string) (innerpath string, outpa
 	_, err = b.BosClient.PutObjectFromStream(bucket, fullname, reader, nil)
 
 	if err != nil {
-		// logger.ErrorJSON("bos", "PutObjectFromStream", map[string]interface{}{
-		// 	"bucket":   bucket,
-		// 	"fullname": fullname,
-		// })
+		wailsruntime.EventsEmit(b.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "上传图片失败",
+			"error": err.Error(),
+			"data":  fullname,
+		})
 
 		return "", "", err
 	}

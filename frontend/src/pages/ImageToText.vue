@@ -1,18 +1,29 @@
 <script setup>
-import SelectPath from "../components/Path.vue";
-import { h, ref, onMounted, reactive } from "vue";
+import { h, ref, onBeforeMount, onUnmounted } from "vue";
 import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
-import { LogPrint, EventsOn } from "../../wailsjs/runtime"
+import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NButton, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
-onMounted(() => {
+onUnmounted(() => {
+    // 取消事件监听
+    EventsOff("handlingEvent")
+    EventsOff("logEvent")
+    EventsOff("uploadImageEvent")
+    EventsOff("image2TextEvent")
+})
+onBeforeMount(() => {
     // 处理事件
     EventsOn("handlingEvent", function (data) {
         handling.value = data
     })
     // 日志事件
     EventsOn("logEvent", function (data) {
-        log.value = log.value + data + "\n"
+        if (typeof data === "string") {
+            log.value = log.value + data + "\n"
+        }
+        if (typeof data === "object") {
+            log.value = log.value + JSON.stringify(data, null, 2) + "\n"
+        }
     })
     // 上传图片事件
     EventsOn("uploadImageEvent", function (data) {

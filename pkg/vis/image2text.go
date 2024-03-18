@@ -2,6 +2,7 @@ package vis
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"crypto/tls"
 	"encoding/base64"
@@ -9,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"io"
 	"net/http"
@@ -20,6 +23,7 @@ import (
 
 type Vis struct {
 	Client http.Client
+	ctx    context.Context
 }
 
 type Payload struct {
@@ -61,9 +65,16 @@ var VisInstalce *Vis
 
 var once sync.Once
 
-func NewVis() *Vis {
+func NewVis(ctx context.Context) *Vis {
 	once.Do(func() {
-		VisInstalce = &Vis{}
+		wailsruntime.EventsEmit(ctx, "logEvent", map[string]interface{}{
+			"type": "info",
+			"msg":  "初始化Vis实例",
+		})
+
+		VisInstalce = &Vis{
+			ctx: ctx,
+		}
 	})
 	return VisInstalce
 }
@@ -93,11 +104,14 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 		Body:    bytes.NewBuffer(body),
 	}
 
-	// logger.InfoJSON("vis", "Image2Text", payload)
-
 	fullURL := fmt.Sprintf("%s%s", config.GetString("vis.host"), url)
 
-	// logger.InfoString("vis", "Image2Text", fullURL)
+	wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+		"type":    "info",
+		"msg":     "图生文请求参数",
+		"payload": payload,
+		"fullURL": fullURL,
+	})
 
 	req, err := http.NewRequest(payload.Method, fullURL, payload.Body)
 
@@ -113,6 +127,13 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 	response, err := v.Client.Do(req)
 
 	if err != nil {
+		wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+			"type":    "error",
+			"msg":     "图生文请求错误",
+			"payload": payload,
+			"fullURL": fullURL,
+			"error":   err.Error(),
+		})
 		return nil, err
 	}
 
@@ -120,11 +141,21 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 
 	data, err := io.ReadAll(response.Body)
 
-	// logger.InfoString("vis", "Image2Text", string(data))
-
 	if err != nil {
+		wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+			"type":  "error",
+			"msg":   "图生文请求读取body错误",
+			"data":  string(data),
+			"error": err.Error(),
+		})
 		return nil, err
 	}
+
+	wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "图生文请求成功",
+		"data": string(data),
+	})
 
 	var res interface{}
 
@@ -154,16 +185,28 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 		}
 		featureResult = re
 	default:
-		// logger.ErrorString("vis", "Image2Text", "Unknown type")
+		wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+			"type": "error",
+			"msg":  "图生文响应结果断言，未知类型",
+		})
 		return nil, errors.New("unknown type")
 	}
 
 	var featureResultValue *FeatureResultValue
-	// logger.InfoString("vis", "Image2Text featureResult", featureResult.Value)
+
+	wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+		"type": "info",
+		"msg":  "图生文响应结果featureResult.Value",
+		"data": featureResult.Value,
+	})
 	err = json.Unmarshal([]byte(featureResult.Value), &featureResultValue)
 
 	if err != nil {
-		// logger.ErrorString("vis", "Image2Text Unmarshal featureResult", err.Error())
+		wailsruntime.EventsEmit(v.ctx, "logEvent", map[string]interface{}{
+			"type": "error",
+			"msg":  "图生文响应结果featureResult.Value解析失败",
+			"data": err.Error(),
+		})
 		return nil, err
 	}
 

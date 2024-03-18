@@ -290,7 +290,11 @@ func (a *App) UploadImage(input string) map[string]interface{} {
 }
 
 func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) {
-	client := bos.NewBos()
+	defer func() {
+		isFinish <- true
+	}()
+
+	client := bos.NewBos(a.ctx)
 
 	filename := file.Name()
 	// 获取文件后缀名
@@ -298,7 +302,6 @@ func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) 
 
 	if ext != ".jpg" && ext != ".png" && ext != ".jpeg" {
 		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":不支持的图片格式,直接跳过")
-		isFinish <- true
 		return
 	}
 
@@ -309,7 +312,6 @@ func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) 
 
 	if err != nil {
 		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":打开文件失败,error:"+err.Error())
-		isFinish <- true
 		return
 	}
 
@@ -317,7 +319,6 @@ func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) 
 
 	if err != nil {
 		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":读取文件内容失败,error:"+err.Error())
-		isFinish <- true
 		return
 	}
 
@@ -325,7 +326,6 @@ func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) 
 
 	if err != nil {
 		wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":上传bos失败,error:"+err.Error())
-		isFinish <- true
 		return
 	}
 
@@ -334,8 +334,6 @@ func (a *App) uploadBos(imagePath string, file fs.DirEntry, isFinish chan bool) 
 		URL: out,
 	})
 	wailsruntime.EventsEmit(a.ctx, "logEvent", filename+":上传成功,url:"+out)
-
-	isFinish <- true
 }
 
 func (a *App) Replace(input string, output string, args []map[string]string, fileName []string) map[string]interface{} {
@@ -500,7 +498,7 @@ func (a *App) Image2Text(data string) {
 		})
 	}
 
-	visInstance := vis.NewVis()
+	visInstance := vis.NewVis(a.ctx)
 
 	count := len(imageToTexts)
 
