@@ -46,12 +46,13 @@ import {
     CloseOutline,
 } from "@vicons/ionicons5";
 import { useLogsStore } from "../stores/logs.js";
-
+import { useImage2TextStore } from "../stores/image2text"
+const logsStore = useLogsStore();
+const image2textStore = useImage2TextStore()
 const renderIcon = (icon) => {
     return () => h(NIcon, null, { default: () => h(icon) });
 }
 
-const logsStore = useLogsStore();
 const switchLog = (value) => {
     logsStore.switchLog(value)
 }
@@ -65,6 +66,11 @@ onMounted(() => {
     // 日志事件
     EventsOn("logEvent", function (data) {
         logsStore.print(data)
+    })
+
+     // 上传图片事件
+     EventsOn("uploadImageEvent", function (data) {
+        image2textStore.appendPreview(data)
     })
 })
 

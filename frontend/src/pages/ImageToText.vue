@@ -1,13 +1,75 @@
+
+<template>
+    <n-spin :show="handling">
+        <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
+            <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
+            <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                图生文批量处理工具
+            </n-gradient-text>
+            <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFolder('images')">
+                    选择照片
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFolder('download-template')">
+                    下载prompt模版
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="openFile('prompt')">
+                    上传关联prompt
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="image2Text">
+                    <div class="flex flex-row justify-between items-center gap-2">
+                        {{ outputText }}
+                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
+                            <download-outline />
+                        </n-icon>
+                    </div>
+                </button>
+                <button
+                    class="w-button px-4 py-2"
+                    @click="clear">
+                    清理数据
+                </button>
+            </div>
+        </div>
+        <div class="m-4 text-black">
+            <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
+                <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
+                    :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
+                    flex-height :columns="columns" :data="preview" />
+            </div>
+        </div>
+    </n-spin>
+</template>
+
 <script setup>
-import { h, ref, onMounted, onUnmounted } from "vue";
+import { h, ref, onMounted, onUnmounted, watchEffect } from "vue";
 import { OpenFile, OpenFolder, Image2Text } from '../../wailsjs/go/main/App'
 import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NSpin } from "naive-ui";
 import { DownloadOutline } from "@vicons/ionicons5";
+import { useImage2TextStore } from "../stores/image2text"
+
+const image2textStore = useImage2TextStore()
+// 预览数据
+const preview = ref([])
+const image2textfinish = ref(false)
+
+watchEffect(() => {
+    image2textfinish.value = image2textStore.getIsFinish()
+    preview.value = image2textStore.getPreview()
+})
+
 onUnmounted(() => {
     // 取消事件监听
     EventsOff("handlingEvent")
-    EventsOff("uploadImageEvent")
     EventsOff("image2TextEvent")
 })
 onMounted(() => {
@@ -15,18 +77,9 @@ onMounted(() => {
     EventsOn("handlingEvent", function (data) {
         handling.value = data
     })
-    // 上传图片事件
-    EventsOn("uploadImageEvent", function (data) {
-        console.log(data)
-        preview.value = [...preview.value, data]
-        console.log(preview.value)
-    })
+   
     // 图生文事件
     EventsOn("image2TextEvent", function (data) {
-        // 输入日志
-        percent.value = percent.value + 1
-        outputText.value = "文生图" + `${(percent.value / preview.value.length * 100).toFixed(2)}%`
-
         preview.value.forEach(item => {
             let vis = data.find(vis => vis.id == item.id)
             // 定义一个字符串变量用于保存结果
@@ -52,8 +105,7 @@ onMounted(() => {
             item["history_msg"] = result
         })
 
-        if (preview.value.length == percent.value) {
-            image2textfinish.value = true
+        if (image2textfinish) {
             notification.create({
                 title: '图生文完成',
                 content: `如需下载，请点击下载按钮`,
@@ -65,12 +117,8 @@ onMounted(() => {
         }
     })
 })
-const image2textfinish = ref(false)
-const percent = ref(0)
 const message = useMessage();
 const notification = useNotification()
-const preview = ref([])
-const showModal = ref(false)
 const outputText = ref("文生图")
 const handling = ref(false)
 const columns = [
@@ -198,28 +246,13 @@ const columns = [
             }
         ]
     },
-
 ];
 
 // 后端解析Prompt返回内容，前端追加内容到table中
 const parsePromptFile = (response) => {
     if (response.code == 0) {
         // 遍历preview 如果id存在，则将数据追加到data中
-        preview.value.forEach(item => {
-            let prompt = response.data.find(prompt => prompt.id == item.id)
-            item["prompt"] = prompt.prompt
-            item["history"] = prompt.history
-        })
-        message.info(response.message)
-        showModal.value = false
-    } else {
-        message.error(response.message)
-    }
-}
-
-// 上传图片回调
-const uploadImage = (response) => {
-    if (response.code == 0) {
+        image2textStore.bindPrompt(response.data)
         message.info(response.message)
     } else {
         message.error(response.message)
@@ -258,9 +291,6 @@ const openFolder = (type) => {
             message.error(res.message)
             return
         }
-        if (type == "images") {
-            uploadImage(res)
-        }
         if (type == "download-template") {
             message.info(res.message)
         }
@@ -274,20 +304,13 @@ const openFolder = (type) => {
 
 
 const clear = () => {
-    preview.value = []
-    handling.value = false
-    outputText.value = "文生图"
-    percent.value = 0
-    showModal.value = false
-    image2textfinish.value = false
+    image2textStore.clearPreview()
 }
 
 // 图生文接口
 const image2Text = () => {
     let body = JSON.stringify(preview.value)
-    Image2Text(body).then(res => {
-        console.log(res)
-    })
+    Image2Text(body)
 }
 const tableRef = ref();
 
@@ -299,54 +322,5 @@ const handleCheck = (rowKeys) => {
 }
 </script>
 
-<template>
-    <n-spin :show="handling">
-        <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
-            <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
-            <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
-                图生文批量处理工具
-            </n-gradient-text>
-            <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFolder('images')">
-                    选择照片
-                </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFolder('download-template')">
-                    下载prompt模版
-                </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="openFile('prompt')">
-                    上传关联prompt
-                </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="image2Text">
-                    <div class="flex flex-row justify-between items-center gap-2">
-                        {{ outputText }}
-                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
-                            <download-outline />
-                        </n-icon>
-                    </div>
-                </button>
-                <button
-                    class="w-button px-4 py-2"
-                    @click="clear">
-                    清理数据
-                </button>
-            </div>
-        </div>
-        <div class="m-4 text-black">
-            <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
-                <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
-                    :row-key="rowKey" @update:checked-row-keys="handleCheck" :style="{ height: `${height}px` }"
-                    flex-height :columns="columns" :data="preview" />
-            </div>
-        </div>
-    </n-spin>
-</template>
 
 <style scoped></style>
