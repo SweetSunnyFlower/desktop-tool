@@ -45,6 +45,16 @@ export const useImage2TextStore = defineStore('image2text', () => {
         })
     }
 
+    const bindLLM = (data) => {
+        preview.value.forEach(item => {
+            if (item.id != data.id) {
+                return
+            }
+            item["chat_id"] = data.chat_id
+            item["content"] = data.content
+        })
+    }
+
     const clearimage2textCount = () => {
         image2textCount.value = 0
     }
@@ -53,7 +63,10 @@ export const useImage2TextStore = defineStore('image2text', () => {
     const bindImage2Text = (data) => {
         image2textCount.value = image2textCount.value + 1
         preview.value.forEach(item => {
-            let vis = data.find(vis => vis.id == item.id)
+            if (item.id != data.id){
+                return
+            }
+            let vis = data
             // 定义一个字符串变量用于保存结果
             let result = "";
 
@@ -85,5 +98,5 @@ export const useImage2TextStore = defineStore('image2text', () => {
         return image2textfinish.value
     }
 
-    return { preview, getPreview, appendPreview, getIsFinish, bindPrompt, clearPreview, bindImage2Text , clearimage2textCount, template, clearTemplate, getTemplate, setTemplate }
+    return { preview, getPreview, bindLLM, appendPreview, getIsFinish, bindPrompt, clearPreview, bindImage2Text, clearimage2textCount, template, clearTemplate, getTemplate, setTemplate }
 })

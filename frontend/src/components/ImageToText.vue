@@ -42,6 +42,21 @@
                 </div>
             </div>
         </div>
+
+        <div class="flex flex-col items-start w-auto mb-3">
+            <div class="text-gray-700 text-sm my-2 font-bold">LLM</div>
+            <div class="flex gap-2" :class="imageDisplay ? 'flex-row' : 'flex-col w-full'">
+                <div class="text-xs flex flex-col justify-between gap-1 w-full">
+                    <span class="mr-1">CHAT_ID:</span>
+                    <textarea class="form__input" v-model="props.preview.chat_id" />
+                </div>
+                <div class="text-xs flex flex-col justify-between gap-1 w-full">
+                    <span class="mr-1">CONTENT:</span>
+                    <textarea class="form__input" v-model="props.preview.content" />
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 

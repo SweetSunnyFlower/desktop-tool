@@ -15,7 +15,7 @@ func (a *App) LLM(model, template, data string) {
 
 	wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
 		"type": "info",
-		"msg":  "开始解析图生文数据",
+		"msg":  "开始请求llm大模型",
 	})
 
 	err := json.Unmarshal([]byte(data), &imageToTexts)
@@ -31,6 +31,8 @@ func (a *App) LLM(model, template, data string) {
 
 	// 调用llm
 	llmInstance := llm.NewLLM(a.ctx)
+
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", true)
 
 	for _, imageToText := range imageToTexts {
 
@@ -58,12 +60,15 @@ func (a *App) LLM(model, template, data string) {
 				"msg":   "大模型请求错误",
 				"error": err.Error(),
 			})
+			continue
 		}
 
-		wailsruntime.EventsEmit(a.ctx, "llmEvent", map[string]interface{}{
-			"replay": replay,
-		})
+		replay.ID = imageToText.ID
 
-		time.Sleep(time.Second * 1)
+		wailsruntime.EventsEmit(a.ctx, "llmEvent", replay)
+
+		time.Sleep(time.Second * 2)
 	}
+
+	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
 }

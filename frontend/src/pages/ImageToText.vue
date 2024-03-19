@@ -86,16 +86,12 @@ const model = ref("")
 const models = [
     {
         label: '大模型3.5',
-        value: 'EB35'
+        value: 'qianfan_chat'
     },
     {
         label: '大模型4.0',
         value: 'EB40'
     },
-    {
-        label: '千帆聊天',
-        value: 'qianfan_chat'
-    }
 ]
 
 const changeDisplay = () => {
@@ -108,7 +104,48 @@ const image2textfinish = ref(false)
 
 const template = ref("")
 
-const templateOptions = ref([])
+const templateOptions = ref([
+    {
+        label: 'id',
+        value: 'id',
+    },
+    {
+        label: 'url',
+        value: 'url',
+    },
+    {
+        label: 'prompt',
+        value: 'prompt',
+    },
+    {
+        label: 'history',
+        value: 'history',
+    },
+    {
+        label: 'result',
+        value: 'result',
+    },
+    {
+        label: 'history_msg',
+        label: 'history_msg',
+    },
+    {
+        label: 'ocr_ret',
+        value: 'ocr_ret',
+    },
+    {
+        label: 'face_ret',
+        value: 'face_ret',
+    },
+    {
+        label: 'chat_id',
+        value: 'chat_id',
+    },
+    {
+        label: 'content',
+        value: 'content',
+    }
+])
 
 const mention = (value) => {
     image2textStore.setTemplate(value)
@@ -124,11 +161,11 @@ watchEffect(() => {
     preview.value = image2textStore.getPreview()
     imageDisplay.value = configSotre.getImageDisplay()
     template.value = image2textStore.getTemplate()
-    preview.value.forEach(item => {
-        templateOptions.value = Object.keys(item).map(item => {
-            return { label: item, value: item };
-        });
-    })
+    // preview.value.forEach(item => {
+    //     templateOptions.value = Object.keys(item).map(item => {
+    //         return { label: item, value: item };
+    //     });
+    // })
 })
 
 onUnmounted(() => {
@@ -155,6 +192,10 @@ onMounted(() => {
                 }
             })
         }
+    })
+
+    EventsOn("llmEvent", function (data) {
+        image2textStore.bindLLM(data)
     })
 })
 

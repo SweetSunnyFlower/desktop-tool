@@ -75,6 +75,8 @@ type ImageToTextDownload struct {
 	HistoryMsg string `json:"history_msg"`
 	OcrRet     string `json:"ocr_ret"`
 	FaceRet    string `json:"face_ret"`
+	ChatID     string `json:"chat_id"`
+	Content    string `json:"content"`
 }
 
 // NewApp creates a new App application struct
@@ -518,10 +520,10 @@ func (a *App) Image2Text(data string) {
 			})
 			continue
 		}
-		imageToTexts[i].FaceRet = result.FaceRet
-		imageToTexts[i].OcrRet = result.OcrRet
-		imageToTexts[i].HistoryMsg = result.HistoryMsg
-		imageToTexts[i].Result = result.Result
+		imageToText.FaceRet = result.FaceRet
+		imageToText.OcrRet = result.OcrRet
+		imageToText.HistoryMsg = result.HistoryMsg
+		imageToText.Result = result.Result
 
 		wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
 			"type": "info",
@@ -529,7 +531,7 @@ func (a *App) Image2Text(data string) {
 			"data": result,
 		})
 
-		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToTexts)
+		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToText)
 
 		if i != count-1 {
 			time.Sleep(2 * time.Second)
@@ -607,7 +609,7 @@ func (a *App) DownloadImage2Text(folder string, data string) map[string]interfac
 	writer := csv.NewWriter(outputFile)
 	defer writer.Flush()
 
-	var records [][]string = [][]string{{"id", "url", "prompt", "history", "result", "face_ret", "ocr_ret", "history_msg"}}
+	var records [][]string = [][]string{{"id", "url", "prompt", "history", "result", "face_ret", "ocr_ret", "history_msg", "chat_id", "content"}}
 
 	for _, imageToText := range imageToTexts {
 
@@ -620,6 +622,8 @@ func (a *App) DownloadImage2Text(folder string, data string) map[string]interfac
 		record = append(record, imageToText.FaceRet)
 		record = append(record, imageToText.OcrRet)
 		record = append(record, imageToText.HistoryMsg)
+		record = append(record, imageToText.ChatID)
+		record = append(record, imageToText.Content)
 		records = append(records, record)
 	}
 

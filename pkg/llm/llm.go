@@ -95,7 +95,8 @@ type Response struct {
 }
 
 type CompletionResponse struct {
-	ChatID  string `json:"chatId"`
+	ID      string `json:"id"`
+	ChatID  string `json:"chat_id"`
 	Content string `json:"content"`
 }
 
