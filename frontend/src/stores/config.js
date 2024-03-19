@@ -12,5 +12,15 @@ export const useConfigStore = defineStore('config', () => {
         imageDisplay.value = !imageDisplay.value
     }
 
-    return {imageDisplay, getImageDisplay, setImageDisplay}
+    const model = ref("qianfan_chat")
+
+    const getModel = () => {
+        return model.value
+    }
+
+    const setModel = (value) => {
+        model.value = value
+    }
+
+    return {imageDisplay, getImageDisplay, setImageDisplay, model, getModel, setModel}
 })

@@ -36,8 +36,12 @@
                 </button>
                 <button class="w-button px-4 py-2 relative overflow-visible" @click="showmetion = !showmetion">
                     设置提问模版
-                    <n-mention v-if="showmetion" @click.stop="showmetion=showmetion" class="absolute top-12 left-0 overflow-hidden w-64 text-left" type="text"
-                        :value="template" :options="templateOptions" prefix="@" :on-update:value="mention" />
+                    <div class="absolute top-12 left-0 w-64 overflow-hidden">
+                        <n-select @click.stop="showmetion = showmetion" v-if="showmetion" v-model:value="model"
+                            @update:value="handleModelUpdateValue" size="tiny" :options="models" />
+                        <n-mention v-if="showmetion" @click.stop="showmetion = showmetion" class="text-left" type="text"
+                            :value="template" :options="templateOptions" prefix="@" :on-update:value="mention" />
+                    </div>
                 </button>
                 <button class="w-button px-4 py-2" @click="llm">
                     <div class="flex flex-row justify-between items-center gap-2">
@@ -78,6 +82,21 @@ const configSotre = useConfigStore()
 
 const showmetion = ref(false)
 const imageDisplay = ref(false)
+const model = ref("")
+const models = [
+    {
+        label: '大模型3.5',
+        value: 'EB35'
+    },
+    {
+        label: '大模型4.0',
+        value: 'EB40'
+    },
+    {
+        label: '千帆聊天',
+        value: 'qianfan_chat'
+    }
+]
 
 const changeDisplay = () => {
     configSotre.setImageDisplay()
@@ -95,7 +114,12 @@ const mention = (value) => {
     image2textStore.setTemplate(value)
 }
 
+const handleModelUpdateValue = (value) => {
+    configSotre.setModel(value)
+}
+
 watchEffect(() => {
+    model.value = configSotre.getModel()
     image2textfinish.value = image2textStore.getIsFinish()
     preview.value = image2textStore.getPreview()
     imageDisplay.value = configSotre.getImageDisplay()
@@ -319,6 +343,9 @@ const openFolder = (type) => {
     })
 }
 
+const setModel = () => {
+    model.value = model.value
+}
 
 const clear = () => {
     image2textStore.clearPreview()
@@ -333,7 +360,7 @@ const image2Text = () => {
 
 const llm = () => {
     let body = JSON.stringify(preview.value)
-    LLM("EB35", template.value, body)
+    LLM(model.value, template.value, body)
 }
 const tableRef = ref();
 const height = ref(420)

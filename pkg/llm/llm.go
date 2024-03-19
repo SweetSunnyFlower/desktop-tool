@@ -184,9 +184,16 @@ func (l *LLM) Completions(model, replaced string) (*CompletionResponse, error) {
 		"data":    string(data),
 	})
 
-	var res *Response
+	res := &Response{}
 
 	if err = json.Unmarshal(data, res); err != nil {
+
+		wailsruntime.EventsEmit(l.ctx, "logEvent", map[string]interface{}{
+			"type": "error",
+			"msg":  "大模型请响应解析失败",
+			"data": string(data),
+		})
+
 		return nil, err
 	}
 
@@ -256,7 +263,7 @@ func (l *LLM) buildBody(completion *Completion) string {
 		},
 		From:      config.GetString("llm.from"),
 		Token:     config.GetString("llm.token"),
-		ModelName: strings.ToUpper(completion.Model),
+		ModelName: completion.Model,
 		LlmRequest: &LlmRequest{
 			Model:    "",
 			Messages: messages,
