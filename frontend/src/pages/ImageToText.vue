@@ -3,9 +3,9 @@
         <div class="m-4 text-3xl flex flex-row justify-between items-center relative text-gray-700">
             <!-- background-image: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); -->
             <div class="flex flex-row items-baseline gap-2">
-                <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                <!-- <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
                     图生文批量处理工具
-                </n-gradient-text>
+                </n-gradient-text> -->
                 <div class="flex flex-row font-bold text-xs gap-1">
                     <div class="text-xs">横向</div>
                     <div @click="changeDisplay"
@@ -14,28 +14,32 @@
                     </div>
                     <div class="text-xs">纵向</div>
                 </div>
-
             </div>
-            <div class="flex lg:flex-row sm:flex-col sm:top-0 justify-between gap-3 absolute right-2 z-50">
+            <div class="flex lg:flex-row sm:flex-col md:flex-col sm:top-0  justify-between gap-3 right-2 z-50">
                 <button class="w-button px-4 py-2" @click="openFolder('images')">
-                    选择照片
+                    <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
+                        选择照片
+                    </n-gradient-text>
                 </button>
                 <button class="w-button px-4 py-2" @click="openFolder('download-template')">
-                    下载prompt模版
+                    <n-gradient-text gradient="linear-gradient(90deg, #fee140 0%, #96e6a1 100%)">
+                        下载prompt模版
+                    </n-gradient-text>
                 </button>
                 <button class="w-button px-4 py-2" @click="openFile('prompt')">
-                    上传关联prompt
+                    <n-gradient-text gradient="linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)">
+                        上传关联prompt
+                    </n-gradient-text>
                 </button>
                 <button class="w-button px-4 py-2" @click="image2Text">
-                    <div class="flex flex-row justify-between items-center gap-2">
-                        {{ outputText }}
-                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-iamge2text')">
-                            <download-outline />
-                        </n-icon>
-                    </div>
+                    <n-gradient-text gradient="linear-gradient(90deg, #fa709a 0%, #fee140 100%)">
+                        图生文
+                    </n-gradient-text>
                 </button>
                 <button class="w-button px-4 py-2 relative overflow-visible" @click="showmetion = !showmetion">
-                    设置提问模版
+                    <n-gradient-text gradient="linear-gradient(90deg, #a8edea 0%, #fed6e3 100%)">
+                        设置提问模版
+                    </n-gradient-text>
                     <div class="absolute top-12 left-0 w-64 overflow-hidden">
                         <n-select @click.stop="showmetion = showmetion" v-if="showmetion" v-model:value="model"
                             @update:value="handleModelUpdateValue" size="tiny" :options="models" />
@@ -44,15 +48,19 @@
                     </div>
                 </button>
                 <button class="w-button px-4 py-2" @click="llm">
-                    <div class="flex flex-row justify-between items-center gap-2">
+                    <n-gradient-text gradient="linear-gradient(90deg, #d299c2 0%, #96e6a1 100%)">
                         大模型对话
-                        <n-icon size="14" v-if="image2textfinish" @click.stop="openFolder('download-llm')">
-                            <download-outline />
-                        </n-icon>
-                    </div>
+                    </n-gradient-text>
+                </button>
+                <button class="w-button px-4 py-2" v-if="image2textfinish" @click="openFolder('download-iamge2text')">
+                    <n-gradient-text gradient="linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%)">
+                        下载
+                    </n-gradient-text>
                 </button>
                 <button class="w-button px-4 py-2" @click="clear">
-                    清理数据
+                    <n-gradient-text gradient="linear-gradient(90deg, #8fd3f4 0%, #84fab0 100%)">
+                        清理数据
+                    </n-gradient-text>
                 </button>
             </div>
         </div>
@@ -157,7 +165,7 @@ const handleModelUpdateValue = (value) => {
 
 watchEffect(() => {
     model.value = configSotre.getModel()
-    image2textfinish.value = image2textStore.getIsFinish()
+    image2textfinish.value = preview.value.length > 0
     preview.value = image2textStore.getPreview()
     imageDisplay.value = configSotre.getImageDisplay()
     template.value = image2textStore.getTemplate()

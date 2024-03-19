@@ -35,6 +35,10 @@ func init() {
 	ConfigFuncs = make(map[string]ConfigFunc)
 }
 
+func GetConfig() map[string]ConfigFunc {
+	return ConfigFuncs
+}
+
 // InitConfig 初始化配置信息，完成对环境变量以及 config 信息的加载
 func InitConfig(envContent []byte) {
 	// 1. 加载环境变量

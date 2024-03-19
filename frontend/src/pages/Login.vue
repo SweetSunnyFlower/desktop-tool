@@ -1,8 +1,3 @@
-<script setup>
-import { RouterLink } from "vue-router";
-
-</script>
-
 <template>
   <div class="main">
     <div class="container b-container" id="b-container">
@@ -12,15 +7,82 @@ import { RouterLink } from "vue-router";
             产品工具
           </n-gradient-text>
         </h2>
-        <input class="form__input" type="text" placeholder="用户名">
-        <input class="form__input" type="password" placeholder="密码">
+        <input class="form__input" type="text" v-model="email" placeholder="用户名">
+        <input class="form__input" type="password" v-model="password" placeholder="密码">
         <router-link :to="{ name: 'welcome' }">
           <button class="form__button button submit">登录</button>
         </router-link>
       </form>
     </div>
   </div>
+
+  <n-modal v-model:show="show" preset="dialog" title="Dialog">
+    <template #header>
+      <div>请注册应用</div>
+    </template>
+    <div>
+      <n-input
+      v-model:value="license"
+      type="textarea"
+      placeholder="请输入授权码"
+    />
+     
+    </div>
+    <template #action>
+
+      <div @click="register">注册</div>
+    </template>
+  </n-modal>
 </template>
+
+<script setup>
+import { RouterLink } from "vue-router";
+import { Config, Register } from "../../wailsjs/go/main/App"
+import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
+import { useMessage, useNotification, NInput, NImage, NSpin } from "naive-ui";
+
+import { onMounted, onUnmounted, watchEffect } from 'vue'
+
+const email = ref("")
+
+const password = ref("")
+
+const show = ref(true)
+
+const license = ref("")
+const message = useMessage();
+
+watchEffect(() => {
+  show.value = email.value == ""
+})
+
+onUnmounted(() => {
+  EventsOff("queryConfigEvent")
+})
+
+onMounted(() => {
+  Config().then(response => {
+    console.log(response)
+    if (response.code == 0) {
+        // 遍历preview 如果id存在，则将数据追加到data中
+        message.info(response.message)
+    } else {
+        message.error(response.message)
+    }
+  })
+  EventsOn("queryConfigEvent", (res) => {
+    email.value = res.user.email
+    password.value = res.user.password
+  })
+})
+
+const register = () => {
+  Register(license.value).then(res => {
+    console.log(res)
+  })
+}
+
+</script>
 
 <style scoped>
 *,
