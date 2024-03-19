@@ -42,6 +42,41 @@ type storageInfo struct {
 	FileSystem string
 }
 
+var response string = ""
+
+type BosImage struct {
+	ID  string `json:"id"`
+	URL string `json:"url"`
+}
+
+type Prompt struct {
+	ID      string `json:"id"`
+	Prompt  string `json:"prompt"`
+	History string `json:"history"`
+}
+
+type ImageToText struct {
+	ID         string     `json:"id"`
+	URL        string     `json:"url"`
+	Prompt     string     `json:"prompt"`
+	History    string     `json:"history"`
+	Result     string     `json:"result"`
+	HistoryMsg [][]string `json:"history_msg"`
+	OcrRet     string     `json:"ocr_ret"`
+	FaceRet    string     `json:"face_ret"`
+}
+
+type ImageToTextDownload struct {
+	ID         string `json:"id"`
+	URL        string `json:"url"`
+	Prompt     string `json:"prompt"`
+	History    string `json:"history"`
+	Result     string `json:"result"`
+	HistoryMsg string `json:"history_msg"`
+	OcrRet     string `json:"ocr_ret"`
+	FaceRet    string `json:"face_ret"`
+}
+
 // NewApp creates a new App application struct
 func NewApp() *App {
 	return &App{}
@@ -154,41 +189,6 @@ func IsDir(path string) bool {
 		return false
 	}
 	return s.IsDir()
-}
-
-var response string = ""
-
-type BosImage struct {
-	ID  string `json:"id"`
-	URL string `json:"url"`
-}
-
-type Prompt struct {
-	ID      string `json:"id"`
-	Prompt  string `json:"prompt"`
-	History string `json:"history"`
-}
-
-type ImageToText struct {
-	ID         string     `json:"id"`
-	URL        string     `json:"url"`
-	Prompt     string     `json:"prompt"`
-	History    string     `json:"history"`
-	Result     string     `json:"result"`
-	HistoryMsg [][]string `json:"history_msg"`
-	OcrRet     string     `json:"ocr_ret"`
-	FaceRet    string     `json:"face_ret"`
-}
-
-type ImageToTextDownload struct {
-	ID         string `json:"id"`
-	URL        string `json:"url"`
-	Prompt     string `json:"prompt"`
-	History    string `json:"history"`
-	Result     string `json:"result"`
-	HistoryMsg string `json:"history_msg"`
-	OcrRet     string `json:"ocr_ret"`
-	FaceRet    string `json:"face_ret"`
 }
 
 // 解析Prompt文件
@@ -508,7 +508,7 @@ func (a *App) Image2Text(data string) {
 			"data": imageToText,
 		})
 
-		result, err := visInstance.Image2Text(imageToText.URL)
+		result, err := visInstance.Image2Text(imageToText.URL, imageToText.Prompt, imageToText.History)
 		if err != nil {
 			wailsruntime.EventsEmit(a.ctx, "logEvent", map[string]interface{}{
 				"type":  "error",

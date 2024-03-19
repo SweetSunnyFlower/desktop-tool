@@ -79,7 +79,7 @@ func NewVis(ctx context.Context) *Vis {
 	return VisInstalce
 }
 
-func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
+func (v *Vis) Image2Text(imageUrl string, prompt string, history string) (*FeatureResultValue, error) {
 	imageData, err := v.GetImageData(imageUrl)
 
 	if err != nil {
@@ -88,7 +88,7 @@ func (v *Vis) Image2Text(imageUrl string) (*FeatureResultValue, error) {
 
 	resourceKey := v.Md5(base64.StdEncoding.EncodeToString(imageData))
 
-	body, err := v.BuildBody(imageData, map[string]any{"session_id": resourceKey, "extra_info": ""})
+	body, err := v.BuildBody(imageData, map[string]any{"session_id": resourceKey, "extra_info": "", "prompt": prompt, "history": history})
 
 	if err != nil {
 		return nil, err

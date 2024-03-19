@@ -37,7 +37,7 @@
                 <button class="w-button px-4 py-2 relative overflow-visible" @click="showmetion = !showmetion">
                     设置提问模版
                     <n-mention v-if="showmetion" @click.stop="showmetion=showmetion" class="absolute top-12 left-0 overflow-hidden w-64 text-left" type="text"
-                        :value="template" :options="templateOptions" prefix="%" :on-update:value="mention" />
+                        :value="template" :options="templateOptions" prefix="@" :on-update:value="mention" />
                 </button>
                 <button class="w-button px-4 py-2" @click="llm">
                     <div class="flex flex-row justify-between items-center gap-2">
@@ -136,7 +136,7 @@ onMounted(() => {
 
 const message = useMessage();
 const notification = useNotification()
-const outputText = ref("文生图")
+const outputText = ref("图生文")
 const handling = ref(false)
 const columns = [
     {
@@ -333,7 +333,7 @@ const image2Text = () => {
 
 const llm = () => {
     let body = JSON.stringify(preview.value)
-    LLM(template.value, body)
+    LLM("EB35", template.value, body)
 }
 const tableRef = ref();
 const height = ref(420)

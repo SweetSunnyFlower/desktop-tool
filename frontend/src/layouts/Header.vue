@@ -110,19 +110,6 @@ const menuOptions = [
         key: "image-to-text",
         icon: renderIcon(ImageOutline)
     },
-    {
-        label: () => h(
-            RouterLink,
-            {
-                to: {
-                    name: "llm"
-                }
-            },
-            { default: () => "文心一言" }
-        ),
-        key: "llm",
-        icon: renderIcon(DocumentOutline)
-    }
 ];
 
 const activeKey = ref(null);
