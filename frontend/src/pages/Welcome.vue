@@ -18,7 +18,7 @@ onMounted(() => {
 <template>
   <div>
     <div class="flex flex-row justify-between items-start">
-      <div class="m-4 nm-flat-neutral-50-xs rounded-sm w-48 p-4 flex flex-col gap-2">
+      <div class="m-4 nm-flat-neutral-50-xs rounded-sm p-4 flex flex-col gap-2">
         <div class="text-lg font-semibold">用户信息</div>
         <div><span>Email: </span>{{ user.email }}</div>
         <div><span>Uid: </span>{{ user.uid }}</div>
