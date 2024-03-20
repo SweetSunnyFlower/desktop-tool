@@ -7,12 +7,15 @@
                     图生文批量处理工具
                 </n-gradient-text> -->
                 <div class="flex flex-row font-bold text-xs gap-1">
-                    <div class="text-xs">横向</div>
-                    <div @click="changeDisplay"
-                        :class="imageDisplay ? 'h-4 w-10 nm-inset-gray-200 rounded-full flex justify-start' : 'h-4 w-10 nm-inset-gray-300 rounded-full flex justify-end'">
-                        <div class="h-4 w-4 bg-gray-200 shadow-gray-200 transform scale-110 rounded-full"></div>
+                    <div class="flex flex-row  gap-1 w-52">
+                        <div class="text-xs">横向</div>
+                        <div @click="changeDisplay"
+                            :class="imageDisplay ? 'h-4 w-10 nm-inset-gray-200 rounded-full flex justify-start' : 'h-4 w-10 nm-inset-gray-300 rounded-full flex justify-end'">
+                            <div class="h-4 w-4 bg-gray-200 shadow-gray-200 transform scale-110 rounded-full"></div>
+                        </div>
+                        <div class="text-xs">纵向</div>
                     </div>
-                    <div class="text-xs">纵向</div>
+                    <n-slider v-if="!imageDisplay" v-model:value="colNumber" :step="1" :max="5" :min="1"/>
                 </div>
             </div>
             <div class="flex lg:flex-row sm:flex-col md:flex-col sm:top-0  justify-between gap-3 right-2 z-50">
@@ -64,7 +67,12 @@
                 </button>
             </div>
         </div>
-        <div class="m-4 text-gray-700 grid gap-5" :class="imageDisplay ? '' : 'lg:grid-cols-4 sm:grid-cols-3'">
+        <div class="grid-cols-1"></div>
+        <div class="grid-cols-2"></div>
+        <div class="grid-cols-3"></div>
+        <div class="grid-cols-4"></div>
+        <div class="grid-cols-5"></div>
+        <div class="m-4 text-gray-700 grid gap-5" :class="imageDisplay ? '' : `lg:grid-cols-${colNumber} sm:grid-cols-${colNumber}`">
             <image-to-text-view v-for="(item, index) in preview" :preview="item" />
             <!-- <div class="nm-flat-white-xs p-3 mb-4 flex flex-col gap-3">
                 <n-data-table size="small" ref="tableRef" :bordered="false" :single-line="false" :scroll-x="1800"
@@ -101,6 +109,8 @@ const models = [
         value: 'EB40'
     },
 ]
+
+const colNumber = ref(3)
 
 const changeDisplay = () => {
     configSotre.setImageDisplay()

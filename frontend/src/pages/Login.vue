@@ -1,13 +1,14 @@
 <template>
   <div class="main">
-    <div class="container b-container" id="b-container">
+    <div class="container b-container flex flex-col" id="b-container">
+      <span class="text-black font-bold">查询uid&cuid( https://mcms.baidu.com/cuidhelper )</span>
       <div class="form" id="b-form">
-        <h2 class="form_title title">
+        <!-- <h2 class="form_title title">
           <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
             产品工具
           </n-gradient-text>
-        </h2>
-        <input class="form__input" type="text" v-model="user.email" placeholder="用户名">
+        </h2> -->
+        <input class="form__input" type="text" v-model="user.email" placeholder="邮箱">
         <input class="form__input" type="text" v-model="user.uid" placeholder="uid">
         <input class="form__input" type="text" v-model="user.cuid" placeholder="cuid">
         <button class="form__button button submit" @click="login">登录</button>
@@ -39,6 +40,10 @@ const user = ref({
 })
 
 const login = async () => {
+  if (user.value.email == "" || user.value.uid == "" || user.value.cuid == "") {
+    message.error("请输入登录信息")
+    return
+  }
   userStore.setUser(user.value).then(res => {
     SetUser(user.value.email, user.value.uid, user.value.cuid).then((res) => {
       if (res.code == 0) {
