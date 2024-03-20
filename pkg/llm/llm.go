@@ -115,6 +115,8 @@ var instance *LLM
 
 var once sync.Once
 
+var index int
+
 func NewLLM(ctx context.Context) *LLM {
 	once.Do(func() {
 		instance = &LLM{
@@ -141,8 +143,19 @@ func (l *LLM) Completions(model, replaced string) (*CompletionResponse, error) {
 
 	strBody := l.buildBody(completion)
 
-	url := config.GetString("llm.host") + "/baidu.mlarch.modelgateway.ModelService/Generate"
+	hosts := config.GetString("llm.host")
 
+	// 将hosts转换成数组，用|判断
+	hostArr := strings.Split(hosts, "|")
+
+	// 每次请求index 加1
+	index = index + 1
+
+	hostCount := len(hostArr)
+
+	// 对index取余，得到host的索引
+	hostIndex := index % hostCount
+	url := "http://" + hostArr[hostIndex] + "/baidu.mlarch.modelgateway.ModelService/Generate"
 	req, err := http.NewRequest(http.MethodPost, url, strings.NewReader(strBody))
 
 	if err != nil {
