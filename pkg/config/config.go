@@ -44,10 +44,10 @@ func InitConfig(envContent []byte) {
 	// 1. 加载环境变量
 	loadEnv(envContent)
 	// 2. 注册配置信息
-	loadConfig()
+	LoadConfig()
 }
 
-func loadConfig() {
+func LoadConfig() {
 	for name, fn := range ConfigFuncs {
 		viper.Set(name, fn())
 	}
