@@ -21,8 +21,8 @@ export function OpenFolder(arg1:string,arg2:string):Promise<{[key: string]: any}
 
 export function ParsePromptFile(arg1:string):Promise<{[key: string]: any}>;
 
-export function Register(arg1:string):Promise<void>;
-
 export function Replace(arg1:string,arg2:string,arg3:Array<{[key: string]: string}>,arg4:Array<string>):Promise<{[key: string]: any}>;
+
+export function SetUser(arg1:string,arg2:string,arg3:string):Promise<{[key: string]: any}>;
 
 export function UploadImage(arg1:string):Promise<{[key: string]: any}>;

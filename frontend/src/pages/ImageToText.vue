@@ -190,16 +190,6 @@ onMounted(() => {
     // 图生文事件
     EventsOn("image2TextEvent", function (data) {
         image2textStore.bindImage2Text(data)
-        if (image2textfinish.value) {
-            notification.create({
-                title: '图生文完成',
-                content: `如需下载，请点击下载按钮`,
-                meta: new Date().toLocaleString(),
-                onClose: () => {
-
-                }
-            })
-        }
     })
 
     EventsOn("llmEvent", function (data) {

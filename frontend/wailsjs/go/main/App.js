@@ -42,12 +42,12 @@ export function ParsePromptFile(arg1) {
   return window['go']['main']['App']['ParsePromptFile'](arg1);
 }
 
-export function Register(arg1) {
-  return window['go']['main']['App']['Register'](arg1);
-}
-
 export function Replace(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['Replace'](arg1, arg2, arg3, arg4);
+}
+
+export function SetUser(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SetUser'](arg1, arg2, arg3);
 }
 
 export function UploadImage(arg1) {

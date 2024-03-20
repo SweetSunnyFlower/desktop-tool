@@ -1,86 +1,81 @@
 <template>
   <div class="main">
     <div class="container b-container" id="b-container">
-      <form class="form" id="b-form" method="" action="">
+      <div class="form" id="b-form">
         <h2 class="form_title title">
           <n-gradient-text gradient="linear-gradient(90deg, #84fab0 0%, #8fd3f4 100%)">
             产品工具
           </n-gradient-text>
         </h2>
-        <input class="form__input" type="text" v-model="email" placeholder="用户名">
-        <input class="form__input" type="password" v-model="password" placeholder="密码">
-        <router-link :to="{ name: 'welcome' }">
-          <button class="form__button button submit">登录</button>
-        </router-link>
-      </form>
+        <input class="form__input" type="text" v-model="user.email" placeholder="用户名">
+        <input class="form__input" type="text" v-model="user.uid" placeholder="uid">
+        <input class="form__input" type="text" v-model="user.cuid" placeholder="cuid">
+        <button class="form__button button submit" @click="login">登录</button>
+      </div>
     </div>
   </div>
-
-  <n-modal v-model:show="show" preset="dialog" title="Dialog">
-    <template #header>
-      <div>请注册应用</div>
-    </template>
-    <div>
-      <n-input
-      v-model:value="license"
-      type="textarea"
-      placeholder="请输入授权码"
-    />
-     
-    </div>
-    <template #action>
-
-      <div @click="register">注册</div>
-    </template>
-  </n-modal>
 </template>
 
 <script setup>
 import { RouterLink } from "vue-router";
-import { Config, Register } from "../../wailsjs/go/main/App"
+import { Config, SetUser } from "../../wailsjs/go/main/App"
 import { LogPrint, EventsOn, EventsOff } from "../../wailsjs/runtime"
 import { useMessage, useNotification, NInput, NImage, NSpin } from "naive-ui";
+import { useUserStore } from "../stores/user"
+import { useRoute, useRouter } from 'vue-router'
 
 import { onMounted, onUnmounted, watchEffect } from 'vue'
 
-const email = ref("")
+const userStore = useUserStore()
+const router = useRouter()
+const route = useRoute()
 
-const password = ref("")
-
-const show = ref(true)
-
-const license = ref("")
 const message = useMessage();
 
+const user = ref({
+  email: "",
+  uid: "",
+  cuid: "",
+})
+
+const login = async () => {
+  userStore.setUser(user.value).then(res => {
+    SetUser(user.value.email, user.value.uid, user.value.cuid).then((res) => {
+      if (res.code == 0) {
+        router.push('/admin/welcome')
+      }
+    })
+  })
+}
+
 watchEffect(() => {
-  show.value = email.value == ""
+
 })
 
 onUnmounted(() => {
-  EventsOff("queryConfigEvent")
+  // EventsOff("queryConfigEvent")
 })
 
 onMounted(() => {
-  Config().then(response => {
-    console.log(response)
-    if (response.code == 0) {
-        // 遍历preview 如果id存在，则将数据追加到data中
-        message.info(response.message)
-    } else {
-        message.error(response.message)
-    }
-  })
-  EventsOn("queryConfigEvent", (res) => {
-    email.value = res.user.email
-    password.value = res.user.password
-  })
-})
+  // 从本地获取用户信息
+  let user = userStore.getUser()
 
-const register = () => {
-  Register(license.value).then(res => {
-    console.log(res)
-  })
-}
+  user.value = user
+
+  // Config().then(response => {
+  //   console.log(response)
+  //   if (response.code == 0) {
+  //       // 遍历preview 如果id存在，则将数据追加到data中
+  //       message.info(response.message)
+  //   } else {
+  //       message.error(response.message)
+  //   }
+  // })
+  // EventsOn("queryConfigEvent", (res) => {
+  //   email.value = res.user.email
+  //   password.value = res.user.password
+  // })
+})
 
 </script>
 

@@ -10,6 +10,7 @@ import routes from './routers/router'
 import naive from 'naive-ui';
 import { createPinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 const router = createRouter({
     history: createWebHistory(),
@@ -18,6 +19,7 @@ const router = createRouter({
 
 const app = createApp(App)
 const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate);
 
 app.use(naive)
 app.use(router)
