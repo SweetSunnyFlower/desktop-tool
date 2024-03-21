@@ -534,7 +534,7 @@ func (a *App) Image2Text(data string) {
 		wailsruntime.EventsEmit(a.ctx, "image2TextEvent", imageToText)
 
 		if i != count-1 {
-			time.Sleep(2 * time.Second)
+			time.Sleep(5 * time.Second)
 		}
 	}
 }

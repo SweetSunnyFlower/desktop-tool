@@ -67,7 +67,7 @@ func (a *App) LLM(model, template, data string) {
 
 		wailsruntime.EventsEmit(a.ctx, "llmEvent", replay)
 
-		time.Sleep(time.Second * 2)
+		time.Sleep(5 * time.Second)
 	}
 
 	wailsruntime.EventsEmit(a.ctx, "handlingEvent", false)
