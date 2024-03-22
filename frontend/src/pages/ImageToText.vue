@@ -55,7 +55,7 @@
                         大模型对话
                     </n-gradient-text>
                 </button>
-                <button class="w-button px-4 py-2" v-if="image2textfinish" @click="openFolder('download-iamge2text')">
+                <button class="w-button px-4 py-2" @click="openFolder('download-iamge2text')">
                     <n-gradient-text gradient="linear-gradient(90deg, #89f7fe 0%, #66a6ff 100%)">
                         下载
                     </n-gradient-text>

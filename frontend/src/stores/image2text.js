@@ -38,11 +38,16 @@ export const useImage2TextStore = defineStore('image2text', () => {
 
     // 绑定prompt数据
     const bindPrompt = (data) => {
-        preview.value.forEach(item => {
-            let prompt = data.find(prompt => prompt.id == item.id)
-            item["prompt"] = prompt.prompt
-            item["history"] = prompt.history
-        })
+
+        if (preview.value.length == 0) {
+            preview.value = data
+        } else {
+            preview.value.forEach(item => {
+                let prompt = data.find(prompt => prompt.id == item.id)
+                item["prompt"] = prompt.prompt
+                item["history"] = prompt.history
+            })
+        }
     }
 
     const bindLLM = (data) => {
