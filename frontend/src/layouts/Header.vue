@@ -110,6 +110,19 @@ const menuOptions = [
         key: "image-to-text",
         icon: renderIcon(ImageOutline)
     },
+    {
+        label: () => h(
+            RouterLink,
+            {
+                to: {
+                    name: "translate"
+                }
+            },
+            { default: () => "百度翻译" }
+        ),
+        key: "translate",
+        icon: renderIcon(ImageOutline)
+    },
 ];
 
 const activeKey = ref(null);

@@ -2,6 +2,7 @@ import Header from '../layouts/Header.vue';
 import Welcome from '../pages/Welcome.vue';
 import ImageToText from '../pages/ImageToText.vue';
 import Login from '../pages/Login.vue';
+import Translate from '../pages/Translate.vue';
 
 const routes = [
     {
@@ -22,6 +23,11 @@ const routes = [
                 path: "image-to-text",
                 name: "image-to-text",
                 component: ImageToText
+            },
+            {
+                path: "translate",
+                name: "translate",
+                component: Translate
             },
         ]
     },

@@ -25,4 +25,6 @@ export function Replace(arg1:string,arg2:string,arg3:Array<{[key: string]: strin
 
 export function SetUser(arg1:string,arg2:string,arg3:string):Promise<{[key: string]: any}>;
 
+export function Translate(arg1:string,arg2:string,arg3:string):Promise<string>;
+
 export function UploadImage(arg1:string):Promise<{[key: string]: any}>;
